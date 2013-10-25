@@ -183,3 +183,26 @@ from hpmsgeo
 group by cell,year,type_facility,route_number
 order by cell,year
 ;
+
+
+
+
+-- scratch for selecting the highway numbers with detectors on them
+-- (existing in calvad, theoretically)
+
+with alldetectors as
+  (
+select distinct floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell
+  ,st_centroid(grids.geom4326) as centroid, grids.geom4326 as geom
+   from carbgrid.state4k grids
+   join tempseg.mostusedroadbits murb on st_intersects(seggeom,grids.geom4326)
+   where i_cell=189 and j_cell=72
+
+)
+
+
+select distinct floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell
+       ,refnum as route_number
+from carbgrid.state4k grids
+join tempseg.tdetector ttd on st_intersects(ttd.geom,grids.geom4326)
+where i_cell=189 and j_cell = 72   ;
