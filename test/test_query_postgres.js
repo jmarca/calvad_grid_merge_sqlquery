@@ -31,8 +31,19 @@ describe('get_hpms_from_sql',function(){
                         // err should not exist
                         should.not.exist(err)
                         should.exist(cbtask)
-                        cbtask.should.have.property('accum').with.lengthOf(5);
-                        console.log(cbtask.accum)
+                        cbtask.should.have.property('accum').with.lengthOf(8);
+                        _.each(cbtask.accum,function(row){
+                            _.keys(row).should.have.length(7)
+                            row.should.have.property('cell','189_72')
+                            row.should.have.property('year',2009)
+                            row.should.have.property('f_system')
+                            row.f_system.should.be.within(1, 19)
+                            row.should.have.property('route_number')
+                            row.should.have.property('sum_aadt')
+                            row.should.have.property('sum_vmt')
+                            row.should.have.property('sum_lane_miles')
+
+                        })
                          done()
                      })
        })
