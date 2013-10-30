@@ -28,7 +28,8 @@ describe('get_hpms_from_sql',function(){
       ,function(done){
            var task={'cell_id':'189_72'
                     ,'year':2009
-                    ,'options':options}
+                    ,'options':{'postgres':options}
+                    }
            get_hpms(task
                    ,function(err,cbtask){
                         // err should not exist
@@ -58,7 +59,8 @@ describe('get_detector_route_nums',function(){
       ,function(done){
            var task={'cell_id':'189_72'
                     ,'year':2009
-                    ,'options':options}
+                    ,'options':{'postgres':options}
+                    }
            get_detector_routes(task
                    ,function(err,cbtask){
                         // err should not exist
