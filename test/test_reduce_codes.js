@@ -27,12 +27,12 @@ before(function(done){
 })
 
 
-describe('make a map',function(){
-    it('should get data from sql'
+describe('post process sql queries',function(){
+    it('should get handle a detectorized grid cell'
       ,function(done){
            var task={'cell_id':'189_72'
                     ,'year':2009
-                    ,'options':{'postgres':config}
+                    ,'options':config
                     }
            async.parallel([
                function(cb){
@@ -41,7 +41,7 @@ describe('make a map',function(){
                                 // err should not exist
                                 should.not.exist(err)
                                 should.exist(cbtask)
-                                cb(null,cbtask)
+                                return cb(null,cbtask)
                             });
                    return null
                }
@@ -53,12 +53,12 @@ describe('make a map',function(){
                                           should.exist(cbtask)
                                           cbtask.should.have.property('detector_route_numbers')
                                           cbtask.detector_route_numbers.should.have.length(1)
-                                          _.each(cbtask.accum,function(row){
+                                          _.each(cbtask.detector_route_numbers,function(row){
                                               _.keys(row).should.have.length(2)
                                               row.should.have.property('cell','189_72')
                                               row.should.have.property('route_number',101)
                                           });
-                                          cb(null,cbtask)
+                                          return cb(null,cbtask)
                                       })
                   return null
               }
@@ -73,9 +73,13 @@ describe('make a map',function(){
                               reduce.post_process_sql_queries(task,function(err,cbtask){
                                   should.not.exist(err)
                                   should.exist(cbtask)
-                                  task.should.have.property('class_map').with.lengthOf(1);
+                                  task.should.have.property('class_map')
+                                  _.size(task.class_map).should.eql(3)
+                                  var route_classifications = _.keys(task.class_map)
+                                  route_classifications.sort()
+                                  route_classifications.should.eql(['101','192','225'])
                                   task.should.have.property('aadt_store')
-
+                                  return done()
                               })
                           })
 

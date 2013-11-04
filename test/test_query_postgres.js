@@ -8,27 +8,39 @@ var get_hpms = require('../lib/query_postgres').get_hpms_from_sql
 var get_detector_routes = require('../lib/query_postgres').get_detector_route_nums
 var fs = require('fs')
 
+var config_okay = require('../lib/config_okay')
 
-var env = process.env;
-var puser = process.env.PSQL_USER
-var ppass = process.env.PSQL_PASS
-var phost = process.env.PSQL_TEST_HOST || '127.0.0.1'
-var pport = process.env.PSQL_PORT || 5432
-var db    = process.env.PSQL_DB   || 'spatialvds'
+var config
+before(function(done){
+    config_okay('test.config.json',function(err,c){
+        config ={'postgres':c.postgres
+                ,'couchdb':c.couchdb}
 
-var options ={'host':phost
-             ,'port':pport
-             ,'username':puser
-             ,'password':ppass
-             ,'db':db
-             }
+        return done()
+    })
+    return null
+})
+
+// var env = process.env;
+// var puser = process.env.PSQL_USER
+// var ppass = process.env.PSQL_PASS
+// var phost = process.env.PSQL_TEST_HOST || '127.0.0.1'
+// var pport = process.env.PSQL_PORT || 5432
+// var db    = process.env.PSQL_DB   || 'spatialvds'
+
+// var options ={'host':phost
+//              ,'port':pport
+//              ,'username':puser
+//              ,'password':ppass
+//              ,'db':db
+//              }
 
 describe('get_hpms_from_sql',function(){
     it('should get data from sql'
       ,function(done){
            var task={'cell_id':'189_72'
                     ,'year':2009
-                    ,'options':{'postgres':options}
+                    ,'options':config
                     }
            get_hpms(task
                    ,function(err,cbtask){
@@ -59,7 +71,7 @@ describe('get_detector_route_nums',function(){
       ,function(done){
            var task={'cell_id':'189_72'
                     ,'year':2009
-                    ,'options':{'postgres':options}
+                    ,'options':config
                     }
            get_detector_routes(task
                    ,function(err,cbtask){
@@ -68,7 +80,7 @@ describe('get_detector_route_nums',function(){
                         should.exist(cbtask)
                         cbtask.should.have.property('detector_route_numbers')
                         cbtask.detector_route_numbers.should.have.length(1)
-                        _.each(cbtask.accum,function(row){
+                        _.each(cbtask.detector_route_numbers,function(row){
                             _.keys(row).should.have.length(2)
                             row.should.have.property('cell','189_72')
                             row.should.have.property('route_number',101)
