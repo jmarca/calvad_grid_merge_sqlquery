@@ -68,17 +68,32 @@ describe('post process sql queries',function(){
                               task.should.have.property('accum').with.lengthOf(8);
                               task.should.have.property('detector_route_numbers')
                               task.detector_route_numbers.should.have.length(1)
+                              // if those tests passed, then node.js
+                              // is still pass by reference and is
+                              // modifying refs in subroutines
 
-                              // call the merge code
+                              //  call the merge code
                               reduce.post_process_sql_queries(task,function(err,cbtask){
                                   should.not.exist(err)
                                   should.exist(cbtask)
                                   task.should.have.property('class_map')
-                                  _.size(task.class_map).should.eql(3)
+                                  _.size(task.class_map).should.eql(1)
                                   var route_classifications = _.keys(task.class_map)
                                   route_classifications.sort()
-                                  route_classifications.should.eql(['101','192','225'])
+                                  route_classifications.should.eql(['101'])
                                   task.should.have.property('aadt_store')
+                                  _.size(task.aadt_store).should.eql(3)
+                                  task.aadt_store.should.have.property('14')
+                                  task.aadt_store['14'].should.have.property( 'sum_aadt').with.approximately(185496,0.1)
+                                  task.aadt_store['14'].should.have.property( 'sum_vmt').with.approximately(137844,0.1)
+                                  task.aadt_store['14'].should.have.property( 'sum_lane_miles').with.approximately(25.69,0.01)
+                                  task.aadt_store.should.have.property('16')
+                                  task.aadt_store['16'].should.have.property( 'sum_aadt').with.approximately(95491,0.1)
+                                  task.aadt_store['16'].should.have.property( 'sum_vmt').with.approximately(102226,0.1)
+                                  task.aadt_store['16'].should.have.property( 'sum_lane_miles').with.approximately(32.50,0.01)
+                                  task.aadt_store['17'].should.have.property( 'sum_aadt').with.approximately(153724,0.1)
+                                  task.aadt_store['17'].should.have.property( 'sum_vmt').with.approximately(91443,0.1)
+                                  task.aadt_store['17'].should.have.property( 'sum_lane_miles').with.approximately(54.03,0.01)
                                   return done()
                               })
                           })
