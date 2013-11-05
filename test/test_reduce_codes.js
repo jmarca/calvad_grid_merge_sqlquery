@@ -13,7 +13,10 @@ var get_detector_routes = queries.get_detector_route_nums
 
 
 var date = new Date()
-var test_db_unique = date.getHours()+'-'+date.getMinutes()+'-'+date.getSeconds()+'-'+date.getMilliseconds()
+var test_db_unique = date.getHours()+'-'
+                   + date.getMinutes()+'-'
+                   + date.getSeconds()+'-'
+                   + date.getMilliseconds()
 
 var config
 before(function(done){
