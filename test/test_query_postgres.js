@@ -49,7 +49,7 @@ describe('get_hpms_from_sql',function(){
                         should.exist(cbtask)
                         cbtask.should.have.property('accum').with.lengthOf(8);
                         _.each(cbtask.accum,function(row){
-                            _.keys(row).should.have.length(7)
+                            _.keys(row).should.have.length(11)
                             row.should.have.property('cell','189_72')
                             row.should.have.property('year',2009)
                             row.should.have.property('f_system')
@@ -58,6 +58,16 @@ describe('get_hpms_from_sql',function(){
                             row.should.have.property('sum_aadt')
                             row.should.have.property('sum_vmt')
                             row.should.have.property('sum_lane_miles')
+                            row.should.have.property('sum_daily_single_unit')
+                            row.should.have.property('sum_daily_combination')
+                            row.should.have.property('sum_daily_single_unit_mt')
+                            row.should.have.property('sum_daily_combination_mt')
+
+                            row.sum_daily_single_unit_mt
+                            .should.be.below(row.sum_vmt)
+
+                            row.sum_daily_combination_mt
+                            .should.be.below(row.sum_vmt)
 
                         });
                         done()
