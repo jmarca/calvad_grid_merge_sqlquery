@@ -8,7 +8,7 @@ var _ = require('lodash')
 var reduce = require('../lib/reduce')
 var config_okay = require('../lib/config_okay')
 var queries = require('../lib/query_postgres')
-var get_hpms = queries.get_hpms_from_sql
+var get_hpms_aadt = queries.get_hpms_from_sql
 var get_detector_routes = queries.get_detector_route_nums
 
 
@@ -29,17 +29,18 @@ before(function(done){
     return null
 })
 
+var yr = 2009
 
 describe('post process sql queries',function(){
     it('should  handle a detectorized grid cell'
       ,function(done){
            var task={'cell_id':'189_72'
-                    ,'year':2009
+                    ,'year':yr
                     ,'options':config
                     }
            async.parallel([
                function(cb){
-                   get_hpms(task
+                   get_hpms_aadt(task
                            ,function(err,cbtask){
                                 // err should not exist
                                 should.not.exist(err)

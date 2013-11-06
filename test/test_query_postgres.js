@@ -4,7 +4,7 @@ var should = require('should')
 
 var async = require('async')
 var _ = require('lodash')
-var get_hpms = require('../lib/query_postgres').get_hpms_from_sql
+var get_hpms_aadt = require('../lib/query_postgres').get_hpms_from_sql
 var get_detector_routes = require('../lib/query_postgres').get_detector_route_nums
 var fs = require('fs')
 
@@ -34,15 +34,16 @@ before(function(done){
 //              ,'password':ppass
 //              ,'db':db
 //              }
+var yr = 2008
 
 describe('get_hpms_from_sql',function(){
     it('should get data from sql'
       ,function(done){
            var task={'cell_id':'189_72'
-                    ,'year':2009
+                    ,'year':yr
                     ,'options':config
                     }
-           get_hpms(task
+           get_hpms_aadt(task
                    ,function(err,cbtask){
                         // err should not exist
                         should.not.exist(err)
@@ -51,7 +52,7 @@ describe('get_hpms_from_sql',function(){
                         _.each(cbtask.accum,function(row){
                             _.keys(row).should.have.length(11)
                             row.should.have.property('cell','189_72')
-                            row.should.have.property('year',2009)
+                            row.should.have.property('year',yr)
                             row.should.have.property('f_system')
                             row.f_system.should.be.within(1, 19)
                             row.should.have.property('route_number')
@@ -80,7 +81,7 @@ describe('get_detector_route_nums',function(){
     it('should get data from sql'
       ,function(done){
            var task={'cell_id':'189_72'
-                    ,'year':2009
+                    ,'year':yr
                     ,'options':config
                     }
            get_detector_routes(task
