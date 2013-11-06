@@ -58,15 +58,15 @@ describe('get_hpms_from_sql',function(){
                             row.should.have.property('sum_aadt')
                             row.should.have.property('sum_vmt')
                             row.should.have.property('sum_lane_miles')
-                            row.should.have.property('sum_daily_single_unit')
-                            row.should.have.property('sum_daily_combination')
-                            row.should.have.property('sum_daily_single_unit_mt')
-                            row.should.have.property('sum_daily_combination_mt')
+                            row.should.have.property('sum_single_unit')
+                            row.should.have.property('sum_combination')
+                            row.should.have.property('sum_single_unit_mt')
+                            row.should.have.property('sum_combination_mt')
 
-                            row.sum_daily_single_unit_mt
+                            row.sum_single_unit_mt
                             .should.be.below(row.sum_vmt)
 
-                            row.sum_daily_combination_mt
+                            row.sum_combination_mt
                             .should.be.below(row.sum_vmt)
 
                         });

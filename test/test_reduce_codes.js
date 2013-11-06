@@ -31,7 +31,7 @@ before(function(done){
 
 
 describe('post process sql queries',function(){
-    it('should get handle a detectorized grid cell'
+    it('should  handle a detectorized grid cell'
       ,function(done){
            var task={'cell_id':'189_72'
                     ,'year':2009
@@ -86,17 +86,46 @@ describe('post process sql queries',function(){
                                   route_classifications.should.eql(['101'])
                                   task.should.have.property('aadt_store')
                                   _.size(task.aadt_store).should.eql(3)
+                                  //console.log(task.aadt_store)
                                   task.aadt_store.should.have.property('14')
+                                  task.aadt_store['14']
+                                  .should.have.keys('sum_aadt'
+                                                   ,'sum_vmt'
+                                                   ,'sum_lane_miles'
+                                                   ,'sum_single_unit_mt'
+                                                   ,'sum_combination_mt')
                                   task.aadt_store['14'].should.have.property( 'sum_aadt').with.approximately(185496,0.1)
                                   task.aadt_store['14'].should.have.property( 'sum_vmt').with.approximately(137844,0.1)
                                   task.aadt_store['14'].should.have.property( 'sum_lane_miles').with.approximately(25.69,0.01)
+                                  task.aadt_store['14'].should.have.property( 'sum_single_unit_mt').with.approximately(4803,0.01)
+                                  task.aadt_store['14'].should.have.property( 'sum_combination_mt').with.approximately(1005,0.01)
+
                                   task.aadt_store.should.have.property('16')
+                                  task.aadt_store['16']
+                                  .should.have.keys('sum_aadt'
+                                                   ,'sum_vmt'
+                                                   ,'sum_lane_miles'
+                                                   ,'sum_single_unit_mt'
+                                                   ,'sum_combination_mt')
                                   task.aadt_store['16'].should.have.property( 'sum_aadt').with.approximately(95491,0.1)
                                   task.aadt_store['16'].should.have.property( 'sum_vmt').with.approximately(102226,0.1)
                                   task.aadt_store['16'].should.have.property( 'sum_lane_miles').with.approximately(32.50,0.01)
+                                  task.aadt_store.should.have.property('17')
+                                  task.aadt_store['16'].should.have.property( 'sum_single_unit_mt').with.approximately(879,0.01)
+                                  task.aadt_store['16'].should.have.property( 'sum_combination_mt').with.approximately(97,0.01)
+
+                                  task.aadt_store['17']
+                                  .should.have.keys('sum_aadt'
+                                                   ,'sum_vmt'
+                                                   ,'sum_lane_miles'
+                                                   ,'sum_single_unit_mt'
+                                                   ,'sum_combination_mt')
                                   task.aadt_store['17'].should.have.property( 'sum_aadt').with.approximately(153724,0.1)
                                   task.aadt_store['17'].should.have.property( 'sum_vmt').with.approximately(91443,0.1)
                                   task.aadt_store['17'].should.have.property( 'sum_lane_miles').with.approximately(54.03,0.01)
+                                  task.aadt_store['17'].should.have.property( 'sum_single_unit_mt').with.approximately(235,0.01)
+                                  task.aadt_store['17'].should.have.property( 'sum_combination_mt').with.approximately(0,0.01)
+
                                   return done()
                               })
                           })
