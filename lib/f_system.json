@@ -1,0 +1,13 @@
+{"1" : "Rural Principal Arterial Interstate (PAI)",
+ "2" : "Rural Other Principal Arterial (OPA)",
+ "6" : "Rural Minor Arterial (MA)",
+ "7" : "Rural Major Collector (MJC)",
+ "8" : "Rural Minor Collector (MNC)",
+ "9" : "Rural Local (LOC)",
+ "11" : "Urban Principal Arterial Interstate (PAI)",
+ "12" : "Urban Principal Arterial Other Fwys & Exp (OFE)",
+ "14" : "Urban Other Principal Arterial (OPA)",
+ "16" : "Urban Minor Arterial (MA)",
+ "17" : "Urban Collector (COL)",
+ "19" : "Urban Local (LOC)"
+}
