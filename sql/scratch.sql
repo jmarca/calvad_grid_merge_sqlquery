@@ -295,3 +295,20 @@ order by cell,year,f_system
 
 
 -- pct needs to be divided by 100, and make sure to get truck miles traveled
+
+
+-- now get all those hpms records taht are not yet associated with a geo code
+
+
+-- work out checking if there is double counting going on
+
+with hpmsgrids_all as (
+    select  floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell
+            ,hd.hpms_id as hpms_id
+            ,st_length((ST_Dump(ST_Intersection(grids.geom4326, hg.geom))).geom)/st_length(hg.geom) as clipped_fraction
+    from carbgrid.state4k grids
+    join hpms.hpms_geom hg on st_intersects(grids.geom4326,hg.geom)
+    join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)
+    where floor(grids.i_cell) || '_'|| floor(grids.j_cell)='189_72'
+),
+hpmsgrids as (select * from hpmsgrids_all where clipped_fraction > 0.01),
