@@ -218,3 +218,248 @@ order by cell,year,f_system
  132_164 | 2008 | 80           |       12 |   162000 |  111280 |  5.49532300355264 |            3240 |               2225 |            1620 |               1112
  132_164 | 2008 |              |       14 |    28954 |    2831 | 0.391174455198743 |            1447 |                141 |             579 |                 56
 (3 rows)
+
+
+
+select * from hpms.hpms_link_geom  where hpms_id = 294641;
+
+
+with hpmsgrids_all as (
+    select  floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell
+      ,hd.hpms_id as hpms_id
+      ,st_length((ST_Dump(ST_Intersection(grids.geom4326, hg.geom))).geom)/st_length(hg.geom) as clipped_fraction
+    from carbgrid.state4k grids
+    join hpms.hpms_geom hg on st_intersects(grids.geom4326,hg.geom)
+    join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)
+    where hd.hpms_id = 294641
+)
+select * from hpmsgrids_all;
+
+
+with hpmsgrids_all as (
+    select  floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell
+      ,hd.hpms_id as hpms_id
+      ,st_length((ST_Dump(ST_Intersection(grids.geom4326, hg.geom))).geom)/st_length(hg.geom) as clipped_fraction
+    from carbgrid.state4k grids
+    join hpms.hpms_geom hg on st_intersects(grids.geom4326,hg.geom)
+    join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)
+    where floor(grids.i_cell) || '_'|| floor(grids.j_cell)='100_124'
+)
+, hpmsgrids_summed as (
+    select cell, hpms_id, sum(clipped_fraction) as clipped_fraction from hpmsgrids_all group by cell, hpms_id
+)
+, hpmsgrids as (
+    select cell,hpms_id, clipped_fraction
+    from hpmsgrids_summed
+    where clipped_fraction > 0.01
+)
+,hpmsgeo as (
+    select id, year_record as year, state_code,is_metric,fips,begin_lrs,end_lrs
+           ,route_number, type_facility,f_system,gf_system, aadt,through_lanes
+           ,lane_width, peak_parking
+           ,speed_limit, design_speed
+           , perc_single_unit as pct_s_u_pk_hr
+           ,coalesce(avg_single_unit,0.0) as avg_single_unit
+           ,perc_combination as pct_comb_pk_hr
+           ,coalesce(avg_combination,0.0) as avg_combination
+           ,k_factor,dir_factor
+           ,peak_lanes,peak_capacity
+           ,county, locality,link_desc,from_name, to_name
+           ,hg.cell
+           ,CASE WHEN is_metric>0
+                 THEN section_length*clipped_fraction*0.621371
+                 ELSE section_length*clipped_fraction
+                 END as sec_len_miles
+    from hpms.hpms_data hd
+    join hpmsgrids hg on (hd.id=hg.hpms_id)
+    where section_id !~ 'FHWA*'
+    and state_code=6
+    and year_record=2008
+)
+select cell,year,route_number,f_system, sum(aadt) as sum_aadt
+       ,  floor(sum(aadt*sec_len_miles)) as sum_vmt
+       , sum(sec_len_miles*through_lanes) as sum_lane_miles
+       , floor(sum(avg_single_unit*aadt/100)) as sum_single_unit
+       , floor(sum(avg_single_unit*aadt*sec_len_miles/100)) as sum_single_unit_mt
+       , floor(sum(avg_combination*aadt/100)) as sum_combination
+       , floor(sum(avg_combination*aadt*sec_len_miles/100)) as sum_combination_mt
+from hpmsgeo
+group by cell,year,route_number,f_system
+order by cell,year,f_system
+
+
+-- all of alameda county
+
+with hpmsgrids_all as (
+    select  floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell
+      ,hd.hpms_id as hpms_id
+      ,st_length((ST_Dump(ST_Intersection(grids.geom4326, hg.geom))).geom)/st_length(hg.geom) as clipped_fraction
+    from carbgrid.state4k grids
+    join hpms.hpms_geom hg on st_intersects(grids.geom4326,hg.geom)
+    join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)
+    join carb_counties_aligned_03 caco on st_intersects(grids.geom4326,caco.geom4326)
+    where caco.name = 'ALAMEDA'
+)
+select * from hpmsgrids_all;
+
+
+with hpmsgrids_all as (
+    select distinct floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell
+      ,hd.hpms_id as hpms_id
+      ,st_length((ST_Dump(ST_Intersection(grids.geom4326, hg.geom))).geom)/st_length(hg.geom) as clipped_fraction
+    from carbgrid.state4k grids
+    join hpms.hpms_geom hg on st_intersects(grids.geom4326,hg.geom)
+    join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)
+    join carb_counties_aligned_03 caco on st_intersects(grids.geom4326,caco.geom4326)
+    where caco.name = 'ALAMEDA'
+)
+, hpmsgrids_summed as (
+    select cell, hpms_id, sum(clipped_fraction) as clipped_fraction from hpmsgrids_all group by cell, hpms_id
+)
+, hpmsgrids as (
+    select cell,hpms_id, clipped_fraction
+    from hpmsgrids_summed
+    where clipped_fraction > 0.01
+)
+select * from hpmsgrids;
+
+-- clipped_fractions > 1  in 133_164
+
+
+
+with hpmsgrids_all as (
+    select distinct floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell
+      ,hd.hpms_id as hpms_id
+      ,st_length((ST_Dump(ST_Intersection(grids.geom4326, hg.geom))).geom)/st_length(hg.geom) as clipped_fraction
+    from carbgrid.state4k grids
+    join hpms.hpms_geom hg on st_intersects(grids.geom4326,hg.geom)
+    join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)
+    where floor(grids.i_cell) || '_'|| floor(grids.j_cell)='133_164'
+)
+, hpmsgrids_summed as (
+    select cell, hpms_id, sum(clipped_fraction) as clipped_fraction, count(clipped_fraction) as cnt from hpmsgrids_all group by cell, hpms_id
+)
+, hpmsgrids as (
+    select cell,hpms_id, clipped_fraction
+    from hpmsgrids_summed
+    where clipped_fraction > 0.01
+)
+select * from hpmsgrids_summed order by clipped_fraction desc;
+
+
+with hpmsgrids_all as (
+    select distinct floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell
+      ,hd.hpms_id as hpms_id
+      ,st_length((ST_Dump(ST_Intersection(grids.geom4326, hg.geom))).geom)/st_length(hg.geom) as clipped_fraction
+    from carbgrid.state4k grids
+    join hpms.hpms_geom hg on st_intersects(grids.geom4326,hg.geom)
+    join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)
+    where floor(grids.i_cell) || '_'|| floor(grids.j_cell)='133_164'
+)
+, hpmsgrids_summed as (
+    select cell, hpms_id, sum(clipped_fraction) as clipped_fraction, count(clipped_fraction) as cnt from hpmsgrids_all group by cell, hpms_id
+)
+, hpmsgrids as (
+    select cell,hpms_id, clipped_fraction
+    from hpmsgrids_summed
+    where clipped_fraction > 0.01
+)
+select * from hpmsgrids_summed order by clipped_fraction desc;
+
+-- greater than 1 clipped fraction.  why?  ( 266394,  220644, 323177,  266396,  220646,  323178)
+
+with hpmsgrids_all as (
+    select distinct floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell
+      ,hd.hpms_id as hpms_id
+      ,st_length((ST_Dump(ST_Intersection(grids.geom4326, hg.geom))).geom)/st_length(hg.geom) as clipped_fraction
+    from carbgrid.state4k grids
+    join hpms.hpms_geom hg on st_intersects(grids.geom4326,hg.geom)
+    join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)
+    where hpms_id in ( 266394,  220644, 323177,  266396,  220646,  323178)
+)
+
+with hpmsgrids_all as (
+    select  floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell
+      ,hd.hpms_id as hpms_id
+      ,st_length( (ST_Dump(ST_Intersection(grids.geom4326, hg.geom))).geom) as clipped_length
+      ,st_length((ST_DUMP(hg.geom)).geom) as orig_length
+    from carbgrid.state4k grids
+    join hpms.hpms_geom hg on st_intersects(grids.geom4326,hg.geom)
+    join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)
+    where hpms_id in ( 266394,  220644, 323177,  266396,  220646,  323178)
+)
+select *,clipped_length/orig_length as frac  from hpmsgrids_all order by hpms_id;
+
+with hpmsgrids_all as (
+    select  floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell
+      ,hd.hpms_id as hpms_id
+      ,hg.id as geom_id
+--      ,st_length( (ST_Dump(ST_Intersection(grids.geom4326, hg.geom))).geom) as clipped_length
+--      ,st_length((ST_DUMP(hg.geom)).geom) as orig_length
+    from carbgrid.state4k grids
+    join hpms.hpms_geom hg on st_intersects(grids.geom4326,hg.geom)
+    join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)
+    where hpms_id in ( 266394,  220644, 323177,  266396,  220646,  323178)
+)
+select *  from hpmsgrids_all order by hpms_id;
+
+
+--direction!
+
+with hpmsgrids_all as (
+    select  floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell
+      ,hd.hpms_id as hpms_id
+      ,st_length( (ST_Dump(ST_Intersection(grids.geom4326, hg.geom))).geom) as clipped_length
+      ,st_length((ST_DUMP(hg.geom)).geom) as orig_length
+      ,direction
+    from carbgrid.state4k grids
+    join hpms.hpms_geom hg on st_intersects(grids.geom4326,hg.geom)
+    join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)
+    where hpms_id in ( 266394,  220644, 323177,  266396,  220646,  323178)
+)
+, hpmsgrids_summed as (
+    select cell, hpms_id, sum(clipped_length)/sum(orig_length) as clipped_fraction from hpmsgrids_all group by cell, hpms_id
+)
+select hpms_id,sum(clipped_fraction) from hpmsgrids_summed group by hpms_id;
+
+
+-- need to separately sum lengths of roads
+
+
+with hpmsgrids_all as (
+    select  floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell
+      ,hd.hpms_id as hpms_id
+      ,st_length( (ST_Dump(ST_Intersection(grids.geom4326, hg.geom))).geom) as clipped_length
+      ,hd.direction
+    from carbgrid.state4k grids
+    join hpms.hpms_geom hg on st_intersects(grids.geom4326,hg.geom)
+    join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)
+    where hpms_id in ( 266394,  220644, 323177,  266396,  220646,  323178)
+)
+, hpmsgrids_summed as (
+    select cell,hpms_id,sum(clipped_length) as clipped_length
+    from hpmsgrids_all
+    group by cell, hpms_id
+)
+, hpms_links as (
+    select distinct hpms_id from hpmsgrids_summed
+)
+, hpms_only as (
+    select hpms_id
+           ,sum(st_length(hg.geom)) as orig_length
+    from hpms_links hgs
+    join hpms.hpms_link_geom hd using (hpms_id)
+    join hpms.hpms_geom hg on (hd.geo_id = hg.id)
+    group by hpms_id
+)
+-- , hpms_total_length as (
+--     select hpms_id,sum(orig_length) as orig_length
+--     from hpms_only
+--     group by hpms_id
+-- )
+, hpms_fractional as (
+    select cell,hpms_id,clipped_length,orig_length,clipped_length/orig_length as clipped_fraction
+    from hpmsgrids_summed hgs
+    join hpms_only htl using (hpms_id)
+)
+select hpms_id,sum(clipped_fraction) from hpms_fractional group by hpms_id;
