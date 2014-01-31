@@ -576,7 +576,6 @@ select cell,sum(sum_vmt) as total_vmt ,sum(sum_single_unit_mt) as total_smt ,sum
 
 
 -- back to Alameda county
-
 with hpmsgrids_all as (
     select  floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell
       ,hd.hpms_id as hpms_id
@@ -603,11 +602,8 @@ with hpmsgrids_all as (
     join hpms.hpms_geom hg on (hd.geo_id = hg.id)
     group by hpms_id
 )
--- , hpms_total_length as (
---     select hpms_id,sum(orig_length) as orig_length
---     from hpms_only
---     group by hpms_id
--- )
+-- select count(*) from hpms_links;       -- =  4481 unique hpms links
+-- select count(*) from hpmsgrids_summed; -- =  6617 unique hpms link-cell pairs
 , hpms_fractional as (
     select cell,hpms_id,clipped_length,orig_length,clipped_length/orig_length as clipped_fraction
     from hpmsgrids_summed hgs
@@ -618,6 +614,7 @@ with hpmsgrids_all as (
     from hpms_fractional
     where clipped_fraction > 0.01
 )
+select count(*) from hpms_links;
 ,hpmsgeo as (
     select id, year_record as year, state_code,is_metric,fips,begin_lrs,end_lrs
            ,route_number, type_facility,f_system,gf_system, aadt,through_lanes
@@ -697,6 +694,7 @@ with hpmsgeo as (
     and year_record=2008
     and county='ALA'
 )
+select count(*) from hpmsgeo;
 , qury as (select year,route_number,f_system, sum(aadt) as sum_aadt
        ,  floor(sum(aadt*sec_len_miles)) as sum_vmt
        , sum(sec_len_miles*through_lanes) as sum_lane_miles
@@ -729,3 +727,192 @@ select f_system,sum(sum_vmt) as total_vmt ,sum(sum_single_unit_mt) as total_smt 
 totals:   |  51787510 |    905610 |   1336974
 
 My way is too high, by almost twice
+
+
+Apparently, the above select using county
+
+
+-- try to figure out why more links in ALA county that expected
+
+with hpmsgrids_all as (
+    select  floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell
+      ,hd.hpms_id as hpms_id
+      ,hd.direction
+    from carbgrid.state4k grids
+    join carb_counties_aligned_03 caco on( st_intersects(grids.geom4326,caco.geom4326) and caco.name='ALAMEDA')
+    join hpms.hpms_geom hg on st_intersects(grids.geom4326,hg.geom)
+    join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)
+)
+, hpmsgrids_summed as (
+    select cell,hpms_id
+    from hpmsgrids_all
+    group by cell, hpms_id
+)
+, hpms_links as (
+    select distinct hpms_id from hpmsgrids_summed
+)
+, hpms_only as (
+    select hpms_id
+           ,sum(st_length(hg.geom)) as orig_length
+    from hpms_links hgs
+    join hpms.hpms_link_geom hd using (hpms_id)
+    join hpms.hpms_geom hg on (hd.geo_id = hg.id)
+    group by hpms_id
+)
+-- hpms_only is just hpms links that are geo in Alameda
+, hpmsgeo as (
+    select CASE WHEN hpms_id is not null
+                 THEN 'matched'
+                 ELSE 'unmatched'
+                 END as hpms_geocoded
+           ,id, aadt, county, locality,link_desc,from_name, to_name
+           ,CASE WHEN is_metric>0
+                 THEN section_length*0.621371
+                 ELSE section_length
+                 END as sec_len_miles
+    from hpms.hpms_data hd
+    left outer join  hpms_only ho on (ho.hpms_id=hd.id)
+    where section_id !~ 'FHWA*'
+    and state_code=6
+    and year_record=2008
+    and county='ALA'
+)
+select county,hpms_geocoded,count(*) as count, sum(sec_len_miles) as total_section_length,sum(sec_len_miles*aadt) as total_vmt from hpmsgeo group by county,hpms_geocoded;
+
+-- result:
+ county | hpms_geocoded | count | total_section_length |  total_vmt
+--------+---------------+-------+----------------------+--------------
+ ALA    | matched       |  1365 |             1209.066 | 35234598.348
+ ALA    | unmatched     |   151 |             2460.650 |  3171229.709
+(2 rows)
+
+
+
+with hpmsgrids_all as (
+    select  floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell
+      ,hd.hpms_id as hpms_id
+      ,hd.direction
+    from carbgrid.state4k grids
+    join carb_counties_aligned_03 caco on( st_intersects(grids.geom4326,caco.geom4326) and caco.name='ALAMEDA')
+    join hpms.hpms_geom hg on st_intersects(grids.geom4326,hg.geom)
+    join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)
+)
+, hpmsgrids_summed as (
+    select cell,hpms_id
+    from hpmsgrids_all
+    group by cell, hpms_id
+)
+, hpms_links as (
+    select distinct hpms_id from hpmsgrids_summed
+)
+, hpms_only as (
+    select hpms_id
+           ,sum(st_length(hg.geom)) as orig_length
+    from hpms_links hgs
+    join hpms.hpms_link_geom hd using (hpms_id)
+    join hpms.hpms_geom hg on (hd.geo_id = hg.id)
+    group by hpms_id
+)
+-- hpms_only is just hpms links that are geo in Alameda
+, hpmsgeo as (
+    select id, aadt, county, locality,link_desc,from_name, to_name
+           ,CASE WHEN is_metric>0
+                 THEN section_length*0.621371
+                 ELSE section_length
+                 END as sec_len_miles
+    from hpms.hpms_data hd
+    where section_id !~ 'FHWA*'
+    and state_code=6
+    and year_record=2008
+    and county='ALA'
+)
+, hpms_joined as (
+    select id,hpms_id
+           from hpmsgeo hg
+           full outer join hpms_only ho on (hg.id=ho.hpms_id)
+)
+select count(*) from hpms_joined;
+
+-- need the full outer join
+
+-- okay, so I have more hpms ids that are in alameda.  are some bogus entirely??  Yes, because of the year thing.
+-- Try wthout the year
+
+
+with hpmsgrids_all as (
+    select  floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell
+      ,hd.hpms_id as hpms_id
+      ,hd.direction
+    from carbgrid.state4k grids
+    join carb_counties_aligned_03 caco on( st_intersects(grids.geom4326,caco.geom4326) and caco.name='ALAMEDA')
+    join hpms.hpms_geom hg on st_intersects(grids.geom4326,hg.geom)
+    join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)
+)
+, hpmsgrids_summed as (
+    select cell,hpms_id
+    from hpmsgrids_all
+    group by cell, hpms_id
+)
+, hpms_links as (
+    select distinct hpms_id from hpmsgrids_summed
+)
+, hpms_only as (
+    select hpms_id
+           ,sum(st_length(hg.geom)) as orig_length
+    from hpms_links hgs
+    join hpms.hpms_link_geom hd using (hpms_id)
+    join hpms.hpms_geom hg on (hd.geo_id = hg.id)
+    group by hpms_id
+)
+-- hpms_only is just hpms links that are geo in Alameda
+, hpms_alameda as (
+    select id , aadt, county, locality,link_desc,from_name, to_name, year_record
+           ,CASE WHEN is_metric>0
+                 THEN section_length*0.621371
+                 ELSE section_length
+                 END as sec_len_miles
+    from hpms.hpms_data hd
+    where section_id !~ 'FHWA*'
+    and state_code=6
+    -- and year_record=2008
+    and county='ALA'
+)
+, hpms_joined as (
+    select hpms_id
+           ,CASE WHEN id is not null
+                 THEN 'matched'
+                 ELSE 'unmatched'
+                 END as hpms_geocoded
+           ,year_record
+           ,county
+           from hpms.hpms_data hd
+           join hpms_only ho on (hd.id=ho.hpms_id)
+)
+, ab_joined as (
+    select hpms_id
+           ,CASE WHEN id is not null and hpms_id is not null
+                 THEN 'matched'
+                 when id is not null and hpms_id is null
+                 THEN 'unmatched'
+                 ELSE 'other county'
+                 END as hpms_geocoded
+           ,coalesce(hj.year_record, ha.year_record,0) as year_record
+           ,hj.county
+           from hpms_joined hj
+           full outer join hpms_alameda ha on (hj.hpms_id=ha.id and ha.year_record=hj.year_record)
+)
+select hpms_geocoded,year_record,county,count(*) from ab_joined group by hpms_geocoded,year_record,county order by county,year_record,hpms_geocoded;
+
+
+
+, qury as (select year,route_number,f_system, sum(aadt) as sum_aadt
+       ,  floor(sum(aadt*sec_len_miles)) as sum_vmt
+       , sum(sec_len_miles*through_lanes) as sum_lane_miles
+       , floor(sum(avg_single_unit*aadt/100)) as sum_single_unit
+       , floor(sum(avg_single_unit*aadt*sec_len_miles/100)) as sum_single_unit_mt
+       , floor(sum(avg_combination*aadt/100)) as sum_combination
+       , floor(sum(avg_combination*aadt*sec_len_miles/100)) as sum_combination_mt
+    from hpmsgeo
+    group by year,route_number,f_system
+    order by year,f_system
+)
