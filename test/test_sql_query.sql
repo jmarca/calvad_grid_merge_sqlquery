@@ -536,7 +536,7 @@ from hpmsgeo
 group by cell,year,route_number,f_system
 order by cell,year,f_system
 )
-select cell,sum(sum_vmt) as total_vmt ,sum(sum_single_unit_mt) as total_sumt ,sum(sum_combination_mt) as total_cumt from qury group by cell;
+select cell,sum(sum_vmt) as total_vmt ,sum(sum_single_unit_mt) as total_smt ,sum(sum_combination_mt) as total_cmt from qury group by cell;
 
 -- result
 -- subtotals (qury above)
@@ -566,7 +566,7 @@ select cell,sum(sum_vmt) as total_vmt ,sum(sum_single_unit_mt) as total_sumt ,su
 
 
 -- totals:
-  cell   | total_vmt | total_sumt | total_cumt
+  cell   | total_vmt | total_smt | total_cmt
 ---------+-----------+------------+------------
  132_164 |    261685 |       3260 |       3840
  100_223 |      1026 |          0 |          0
@@ -613,6 +613,119 @@ with hpmsgrids_all as (
     from hpmsgrids_summed hgs
     join hpms_only htl using (hpms_id)
 )
-select * from hpms_only order by hpms_id, orig_length desc;
+, hpmsgrids as (
+    select cell,hpms_id, clipped_fraction
+    from hpms_fractional
+    where clipped_fraction > 0.01
+)
+,hpmsgeo as (
+    select id, year_record as year, state_code,is_metric,fips,begin_lrs,end_lrs
+           ,route_number, type_facility,f_system,gf_system, aadt,through_lanes
+           ,lane_width, peak_parking
+           ,speed_limit, design_speed
+           , perc_single_unit as pct_s_u_pk_hr
+           ,coalesce(avg_single_unit,0.0) as avg_single_unit
+           ,perc_combination as pct_comb_pk_hr
+           ,coalesce(avg_combination,0.0) as avg_combination
+           ,k_factor,dir_factor
+           ,peak_lanes,peak_capacity
+           ,county, locality,link_desc,from_name, to_name
+           ,hg.cell
+           ,CASE WHEN is_metric>0
+                 THEN section_length*clipped_fraction*0.621371
+                 ELSE section_length*clipped_fraction
+                 END as sec_len_miles
+    from hpms.hpms_data hd
+    join hpmsgrids hg on (hd.id=hg.hpms_id)
+    where section_id !~ 'FHWA*'
+    and state_code=6
+    and year_record=2008
+)
+, qury as (select cell,year,route_number,f_system, sum(aadt) as sum_aadt
+       ,  floor(sum(aadt*sec_len_miles)) as sum_vmt
+       , sum(sec_len_miles*through_lanes) as sum_lane_miles
+       , floor(sum(avg_single_unit*aadt/100)) as sum_single_unit
+       , floor(sum(avg_single_unit*aadt*sec_len_miles/100)) as sum_single_unit_mt
+       , floor(sum(avg_combination*aadt/100)) as sum_combination
+       , floor(sum(avg_combination*aadt*sec_len_miles/100)) as sum_combination_mt
+from hpmsgeo
+group by cell,year,route_number,f_system
+order by cell,year,f_system
+)
+select f_system,sum(sum_vmt) as total_vmt ,sum(sum_single_unit_mt) as total_smt ,sum(sum_combination_mt) as total_cmt from qury group by f_system;
 
-fractional order by clipped_fraction desc, hpms_id ;
+-- result
+
+ f_system | total_vmt | total_smt | total_cmt
+----------+-----------+-----------+-----------
+        1 |   2959661 |     65880 |    155097
+        2 |    350860 |         0 |         0
+        6 |    127998 |      2748 |      6552
+        7 |    159653 |       298 |         0
+        8 |     20174 |         0 |         0
+       11 |  27464221 |    686326 |   1105982
+       12 |   2183968 |     42321 |     22437
+       14 |   7178007 |     73612 |     33739
+       16 |   8095362 |     27860 |     11143
+       17 |   3129546 |      6565 |      2024
+       19 |    118060 |         0 |         0
+totals:   |  51787510 |    905610 |   1336974
+
+-- This is average daily vmt, of course, according to HPMS
+
+-- now a simpler query to check that.. sum up all roads in Alameda
+
+with hpmsgeo as (
+    select id, year_record as year, state_code,is_metric,fips,begin_lrs,end_lrs
+           ,route_number, type_facility,f_system,gf_system, aadt,through_lanes
+           ,lane_width, peak_parking
+           ,speed_limit, design_speed
+           , perc_single_unit as pct_s_u_pk_hr
+           ,coalesce(avg_single_unit,0.0) as avg_single_unit
+           ,perc_combination as pct_comb_pk_hr
+           ,coalesce(avg_combination,0.0) as avg_combination
+           ,k_factor,dir_factor
+           ,peak_lanes,peak_capacity
+           ,county, locality,link_desc,from_name, to_name
+           ,CASE WHEN is_metric>0
+                 THEN section_length*0.621371
+                 ELSE section_length
+                 END as sec_len_miles
+    from hpms.hpms_data hd
+    where section_id !~ 'FHWA*'
+    and state_code=6
+    and year_record=2008
+    and county='ALA'
+)
+, qury as (select year,route_number,f_system, sum(aadt) as sum_aadt
+       ,  floor(sum(aadt*sec_len_miles)) as sum_vmt
+       , sum(sec_len_miles*through_lanes) as sum_lane_miles
+       , floor(sum(avg_single_unit*aadt/100)) as sum_single_unit
+       , floor(sum(avg_single_unit*aadt*sec_len_miles/100)) as sum_single_unit_mt
+       , floor(sum(avg_combination*aadt/100)) as sum_combination
+       , floor(sum(avg_combination*aadt*sec_len_miles/100)) as sum_combination_mt
+    from hpmsgeo
+    group by year,route_number,f_system
+    order by year,f_system
+)
+select f_system,sum(sum_vmt) as total_vmt ,sum(sum_single_unit_mt) as total_smt ,sum(sum_combination_mt) as total_cmt from qury group by f_system;
+
+ f_system | total_vmt | total_smt | total_cmt
+----------+-----------+-----------+-----------
+        1 |   2460569 |     61125 |    143817
+        2 |    410531 |       166 |       333
+        6 |    112749 |      2138 |      3482
+        7 |    247199 |       298 |         0
+        8 |     29741 |         0 |         0
+        9 |     27462 |         0 |         0
+       11 |  17704769 |    450955 |    780441
+       12 |   1578895 |     30602 |     16345
+       14 |   5833486 |     61039 |     27622
+       16 |   5819723 |     20473 |      8577
+       17 |   2213288 |      4492 |      1197
+       19 |   1967406 |         0 |         0
+ total    |  38405818 |    631288 |    981814
+
+totals:   |  51787510 |    905610 |   1336974
+
+My way is too high, by almost twice
