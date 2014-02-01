@@ -998,3 +998,14 @@ select hpms_geocoded,year_record,county,sum(vmt) from ab_joined group by hpms_ge
  alameda       |        2007 | ALA    | 37476525.55
  alameda       |        2008 | ALA    | 38405828.05
  alameda       |        2009 | ALA    | 35668504.62
+
+-- so that is the maximum max for hpms based day VMT, but really it
+-- should never be more than the above sum less the unmatched roads
+
+-- For Alameda, for 2007, I get 6,517,219,292 at the moment, or 6 billion
+-- 365 * 36,154,820.77 is 13,200,000,000.00, or 13 billion.
+
+-- so it is in the ballpark, even without the fixes that need to go in.
+
+-- with detector sites, it is 420,000,000 or so VMT per day, which is
+-- an order of magnitude bigger than 36 million
