@@ -901,18 +901,100 @@ with hpmsgrids_all as (
            from hpms_joined hj
            full outer join hpms_alameda ha on (hj.hpms_id=ha.id and ha.year_record=hj.year_record)
 )
-select hpms_geocoded,year_record,county,count(*) from ab_joined group by hpms_geocoded,year_record,county order by county,year_record,hpms_geocoded;
+select hpms_geocoded,year_record,county,sum() from ab_joined group by hpms_geocoded,year_record,county order by county,year_record,hpms_geocoded;
 
 
 
-, qury as (select year,route_number,f_system, sum(aadt) as sum_aadt
-       ,  floor(sum(aadt*sec_len_miles)) as sum_vmt
-       , sum(sec_len_miles*through_lanes) as sum_lane_miles
-       , floor(sum(avg_single_unit*aadt/100)) as sum_single_unit
-       , floor(sum(avg_single_unit*aadt*sec_len_miles/100)) as sum_single_unit_mt
-       , floor(sum(avg_combination*aadt/100)) as sum_combination
-       , floor(sum(avg_combination*aadt*sec_len_miles/100)) as sum_combination_mt
-    from hpmsgeo
-    group by year,route_number,f_system
-    order by year,f_system
+-- same thing, but sum up vmt
+
+with hpmsgrids_all as (
+    select  floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell
+      ,hd.hpms_id as hpms_id
+      ,hd.direction
+    from carbgrid.state4k grids
+    join carb_counties_aligned_03 caco on( st_intersects(grids.geom4326,caco.geom4326) and caco.name='ALAMEDA')
+    join hpms.hpms_geom hg on st_intersects(grids.geom4326,hg.geom)
+    join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)
 )
+, hpmsgrids_summed as (
+    select cell,hpms_id
+    from hpmsgrids_all
+    group by cell, hpms_id
+)
+, hpms_links as (
+    select distinct hpms_id from hpmsgrids_summed
+)
+, hpms_only as (
+    select hpms_id
+           ,sum(st_length(hg.geom)) as orig_length
+    from hpms_links hgs
+    join hpms.hpms_link_geom hd using (hpms_id)
+    join hpms.hpms_geom hg on (hd.geo_id = hg.id)
+    group by hpms_id
+)
+-- hpms_only is just hpms links that are geo in Alameda
+, hpms_alameda as (
+    select id , aadt, county, locality,link_desc,from_name, to_name, year_record
+           ,CASE WHEN is_metric>0
+                 THEN section_length*0.621371
+                 ELSE section_length
+                 END as sec_len_miles
+    from hpms.hpms_data hd
+    where section_id !~ 'FHWA*'
+    and state_code=6
+    -- and year_record=2008
+    and county='ALA'
+)
+, hpms_joined as (
+    select hpms_id
+           ,CASE WHEN id is not null
+                 THEN 'matched'
+                 ELSE 'unmatched'
+                 END as hpms_geocoded
+           ,year_record
+           ,county
+           from hpms.hpms_data hd
+           join hpms_only ho on (hd.id=ho.hpms_id)
+)
+, ab_joined as (
+    select hpms_id
+           ,CASE WHEN id is not null and hpms_id is not null
+                 THEN 'alameda'
+                 when id is not null and hpms_id is null
+                 THEN 'alameda'
+                 ELSE 'other county'
+                 END as hpms_geocoded
+           ,coalesce(hj.year_record, ha.year_record,0) as year_record
+           ,coalesce(hj.county, ha.county) as county
+           ,coalesce(ha.aadt*ha.sec_len_miles,0) as vmt
+           from hpms_joined hj
+           full outer join hpms_alameda ha on (hj.hpms_id=ha.id and ha.year_record=hj.year_record)
+)
+select hpms_geocoded,year_record,county,sum(vmt) from ab_joined group by hpms_geocoded,year_record,county order by county,year_record,hpms_geocoded;
+
+ hpms_geocoded | year_record | county |        sum
+---------------+-------------+--------+--------------------
+ matched       |        2007 | ALA    | 36154820.77
+ matched       |        2008 | ALA    | 35234598.34
+ matched       |        2009 | ALA    | 34422904.34
+ other county  |        2007 | CC     |        0
+ other county  |        2008 | CC     |        0
+ other county  |        2009 | CC     |        0
+ other county  |        2007 | SCL    |        0
+ other county  |        2008 | SCL    |        0
+ other county  |        2009 | SCL    |        0
+ other county  |        2007 | SF     |        0
+ other county  |        2008 | SF     |        0
+ other county  |        2009 | SF     |        0
+ other county  |        2007 | SJ     |        0
+ other county  |        2008 | SJ     |        0
+ other county  |        2009 | SJ     |        0
+ unmatched     |        2007 |        |  1321704.78
+ unmatched     |        2008 |        |  3171229.71
+ unmatched     |        2009 |        |  1245600.27
+
+ hpms_geocoded | year_record | county |        sum
+---------------+-------------+--------+--------------------
+ alameda       |        2007 | ALA    | 37476525.55
+ alameda       |        2008 | ALA    | 38405828.05
+ alameda       |        2009 | ALA    | 35668504.62
