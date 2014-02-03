@@ -1206,7 +1206,7 @@ with grid_cell as (
     where (floor(grids.i_cell) || '_'|| floor(grids.j_cell)='100_223')
 )
 ,hpms_county as (
-      select grid_cell.geom4326, grid_cell.cell,
+      select grid_cell.cell, grid_cell.geom4326,
       hd.id as hpms_id, year_record as year, state_code,is_metric,fips,begin_lrs,end_lrs,
       route_number, type_facility,f_system,gf_system,section_length, aadt,through_lanes,
       lane_width, peak_parking,      speed_limit, design_speed,      perc_single_unit as pct_s_u_pk_hr,
@@ -1223,6 +1223,6 @@ with grid_cell as (
       join hpms.hpms_geom hg on (hg.id=hlg.geo_id)
       inner join grid_cell on true
       where section_id !~ 'FHWA*' and state_code=6 and year_record=2008 and fips='23'
-      and  st_intersects(hc.geom4326,hc.geom)
 )
-select count(*) from hpms_county;
+select count(*) from hpms_county where  st_intersects(geom4326,geom)
+;
