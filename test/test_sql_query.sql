@@ -1009,3 +1009,300 @@ select hpms_geocoded,year_record,county,sum(vmt) from ab_joined group by hpms_ge
 
 -- with detector sites, it is 420,000,000 or so VMT per day, which is
 -- an order of magnitude bigger than 36 million
+
+
+-- reorganize to make a little more efficient
+
+-- same thing, but sum up vmt
+
+with hpms_county as (
+    select id , aadt, county, locality,link_desc,from_name, to_name, year_record
+           ,CASE WHEN is_metric>0
+                 THEN section_length*0.621371
+                 ELSE section_length
+                 END as sec_len_miles
+    from hpms.hpms_data hd
+    where section_id !~ 'FHWA*'
+    and state_code=6
+    and year_record=2008
+    and fips=1
+)
+, hpmsgrids_all as (
+    select  floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell
+      ,hd.hpms_id as hpms_id
+      ,hd.direction
+    from carbgrid.state4k grids
+    join carb_counties_aligned_03 caco on( st_intersects(grids.geom4326,caco.geom4326) and caco.name='ALAMEDA')
+    join hpms.hpms_geom hg on st_intersects(grids.geom4326,hg.geom)
+    join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)
+)
+, hpmsgrids_summed as (
+    select cell,hpms_id
+    from hpmsgrids_all
+    group by cell, hpms_id
+)
+, hpms_links as (
+    select distinct hpms_id from hpmsgrids_summed
+)
+, hpms_only as (
+    select hpms_id
+           ,sum(st_length(hg.geom)) as orig_length
+    from hpms_links hgs
+    join hpms.hpms_link_geom hd using (hpms_id)
+    join hpms.hpms_geom hg on (hd.geo_id = hg.id)
+    group by hpms_id
+)
+, hpms_joined as (
+    select hpms_id
+           ,CASE WHEN id is not null
+                 THEN 'matched'
+                 ELSE 'unmatched'
+                 END as hpms_geocoded
+           ,year_record
+           ,county
+           from hpms.hpms_data hd
+           join hpms_only ho on (hd.id=ho.hpms_id)
+)
+, ab_joined as (
+    select hpms_id
+           ,CASE WHEN id is not null and hpms_id is not null
+                 THEN 'alameda'
+                 when id is not null and hpms_id is null
+                 THEN 'alameda'
+                 ELSE 'other county'
+                 END as hpms_geocoded
+           ,coalesce(hj.year_record, ha.year_record,0) as year_record
+           ,coalesce(hj.county, ha.county) as county
+           ,coalesce(ha.aadt*ha.sec_len_miles,0) as vmt
+           from hpms_joined hj
+           full outer join hpms_alameda ha on (hj.hpms_id=ha.id and ha.year_record=hj.year_record)
+)
+select hpms_geocoded,year_record,county,sum(vmt) from ab_joined group by hpms_geocoded,year_record,county order by county,year_record,hpms_geocoded;
+
+
+
+
+with hpms_county as (select
+      id as hpms_id, year_record as year, state_code,is_metric,fips,begin_lrs,end_lrs,
+      route_number, type_facility,f_system,gf_system,section_length, aadt,through_lanes,
+      lane_width, peak_parking,      speed_limit, design_speed,      perc_single_unit as pct_s_u_pk_hr,
+      coalesce(avg_single_unit,0.0) as avg_single_unit,      perc_combination as pct_comb_pk_hr,
+      coalesce(avg_combination,0.0) as avg_combination,      k_factor,dir_factor,
+      peak_lanes,peak_capacity,      county, locality,link_desc,from_name, to_name
+     ,CASE WHEN is_metric>0 THEN section_length*0.621371
+      ELSE section_length END as full_sec_len_miles
+      from hpms.hpms_data hd
+      where section_id !~ 'FHWA*' and state_code=6 and year_record=2008 and fips='23' )
+,hpmsgrids_all as (
+      select  hc.*,
+              floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell
+      ,st_length( (ST_Dump(ST_Intersection(grids.geom4326, hg.geom))).geom) as clipped_length,
+      hlg.direction   from hpms_county hc
+      join carbgrid.state4k grids on(floor(grids.i_cell) || '_'|| floor(grids.j_cell)='100_223')
+      join hpms.hpms_link_geom hlg on (hlg.hpms_id=hc.hpms_id)
+      join hpms.hpms_geom hg on (hg.id=hlg.geo_id and st_intersects(grids.geom4326,hg.geom) ) )
+, hpmsgrids_summed as (
+      select cell, hpms_id, sum(clipped_length) as clipped_length
+      from hpmsgrids_all group by cell, hpms_id )
+, hpms_links as (
+      select distinct hpms_id from hpmsgrids_summed )
+, hpms_only as (     select hpms_id
+            ,sum(st_length(hg.geom)) as orig_length
+     from hpms_links hgs
+     join hpms.hpms_link_geom hd using (hpms_id)
+     join hpms.hpms_geom hg on (hd.geo_id = hg.id)
+     group by hpms_id )
+, hpms_fractional as (
+     select cell,hpms_id,clipped_length,orig_length,clipped_length/orig_length as clipped_fraction
+     from hpmsgrids_summed hgs
+     join hpms_only htl using (hpms_id) )
+, hpms_fractional_limited as (
+   select cell,hpms_id, clipped_fraction
+   from hpms_fractional
+   where clipped_fraction > 0.01 )
+, hpms_joined as (
+   select hga.*, clipped_fraction, clipped_fraction*full_sec_len_miles as sec_len_miles
+   from hpmsgrids_all hga
+   join hpms_fractional_limited hfl on (hga.hpms_id=hfl.hpms_id) )
+select cell,year,route_number,f_system, sum(aadt) as sum_aadt,
+       floor(sum(aadt*sec_len_miles)) as sum_vmt,
+       sum(sec_len_miles*through_lanes) as sum_lane_miles,
+       floor(sum(avg_single_unit*aadt/100)) as sum_single_unit,
+       floor(sum(avg_single_unit*aadt*sec_len_miles/100)) as sum_single_unit_mt,
+       floor(sum(avg_combination*aadt/100)) as sum_combination,
+       floor(sum(avg_combination*aadt*sec_len_miles/100)) as sum_combination_mt
+from hpms_joined
+group by cell,year,route_number,f_system
+order by cell,year,f_system
+
+
+--
+
+with grid_cell as (
+    select floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell
+           ,geom4326
+    from carbgrid.state4k grids
+    where (floor(grids.i_cell) || '_'|| floor(grids.j_cell)='100_223')
+)
+,hpms_county as (
+      select hd.id as hpms_id, year_record as year, state_code,is_metric,fips,begin_lrs,end_lrs,
+      route_number, type_facility,f_system,gf_system,section_length, aadt,through_lanes,
+      lane_width, peak_parking,      speed_limit, design_speed,      perc_single_unit as pct_s_u_pk_hr,
+      coalesce(avg_single_unit,0.0) as avg_single_unit,      perc_combination as pct_comb_pk_hr,
+      coalesce(avg_combination,0.0) as avg_combination,      k_factor,dir_factor,
+      peak_lanes,peak_capacity,      county, locality,link_desc,from_name, to_name
+      ,CASE WHEN is_metric>0 THEN section_length*0.621371
+       ELSE section_length END as full_sec_len_miles
+      ,hlg.direction
+      ,hg.*
+      from hpms.hpms_data hd
+      join hpms.hpms_link_geom hlg on (hlg.hpms_id=hd.id)
+      join hpms.hpms_geom hg on (hg.id=hlg.geo_id)
+      where section_id !~ 'FHWA*' and state_code=6 and year_record=2008 and fips='23' )
+,hpmsgrids_all as (
+      select  hc.hpms_id
+              ,st_length( (ST_Dump(ST_Intersection(grids.geom4326, hc.geom))).geom) as clipped_length
+              ,hc.direction
+      from hpms_county hc,grid_cell grids
+      --join grid_cell grids on (1=1)
+      where st_intersects(grids.geom4326,hc.geom)
+)
+select count(*) from hpmsgrids_all;
+
+
+, hpmsgrids_summed as (
+      select cell, hpms_id, sum(clipped_length) as clipped_length
+      from hpmsgrids_all group by cell, hpms_id )
+, hpms_links as (
+      select distinct hpms_id from hpmsgrids_summed )
+, hpms_only as (     select hpms_id
+            ,sum(st_length(hg.geom)) as orig_length
+     from hpms_links hgs
+     join hpms.hpms_link_geom hd using (hpms_id)
+     join hpms.hpms_geom hg on (hd.geo_id = hg.id)
+     group by hpms_id )
+, hpms_fractional as (
+     select cell,hpms_id,clipped_length,orig_length,clipped_length/orig_length as clipped_fraction
+     from hpmsgrids_summed hgs
+     join hpms_only htl using (hpms_id) )
+, hpms_fractional_limited as (
+   select cell,hpms_id, clipped_fraction
+   from hpms_fractional
+   where clipped_fraction > 0.01 )
+, hpms_joined as (
+   select hga.*, clipped_fraction, clipped_fraction*full_sec_len_miles as sec_len_miles
+   from hpmsgrids_all hga
+   join hpms_fractional_limited hfl on (hga.hpms_id=hfl.hpms_id) )
+select count(*) from hpmsgrids_all;
+
+
+
+-- fail fail fail
+
+with grid_cell as (
+    select floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell
+           ,geom4326
+    from carbgrid.state4k grids
+    where (floor(grids.i_cell) || '_'|| floor(grids.j_cell)='100_223')
+)
+,fips_code as (
+    select (regexp_matches(fips, '060*(\d*)'))[1] as fips from counties_fips
+    where upper(name)='MENDOCINO'
+)
+,hpms_county as (
+      select grid_cell.cell, grid_cell.geom4326,
+      hd.id as hpms_id, year_record as year, state_code,is_metric,fc.fips,begin_lrs,end_lrs,
+      route_number, type_facility,f_system,gf_system,section_length, aadt,through_lanes,
+      lane_width, peak_parking,      speed_limit, design_speed,      perc_single_unit as pct_s_u_pk_hr,
+      coalesce(avg_single_unit,0.0) as avg_single_unit,      perc_combination as pct_comb_pk_hr,
+      coalesce(avg_combination,0.0) as avg_combination,      k_factor,dir_factor,
+      peak_lanes,peak_capacity,      county, locality,link_desc,from_name, to_name
+      ,CASE WHEN is_metric>0 THEN section_length*0.621371
+       ELSE section_length END as full_sec_len_miles
+      ,hlg.direction
+      ,hg.*
+      ,st_length( ST_Intersection(geom4326, hg.geom)  ) as clipped_length
+      from hpms.hpms_data hd
+      join hpms.hpms_link_geom hlg on (hlg.hpms_id=hd.id)
+      join hpms.hpms_geom hg on (hg.id=hlg.geo_id)
+      inner join grid_cell on true
+      join fips_code fc on (fc.fips = hd.fips)
+      where section_id !~ 'FHWA*' and state_code=6 and year_record=2008
+)
+select count(*) from hpms_county where  st_intersects(geom4326,geom)
+;
+
+
+-- try again
+
+with grid_cell as ( select floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell
+     ,geom4326
+  from carbgrid.state4k grids
+  where (floor(grids.i_cell) || '_'|| floor(grids.j_cell)='100_223')
+)
+,fips_code as (
+    select (regexp_matches(fips, '060*(\d*)'))[1] as fips
+    from counties_fips where upper(name)='MENDOCINO' ),
+hpms_grid_county as (
+    select grid_cell.cell,grid_cell.geom4326,
+      hd.id as hpms_id, year_record as year, state_code,is_metric,hd.fips,begin_lrs,end_lrs,
+      route_number, type_facility,f_system,gf_system, aadt,through_lanes,      lane_width, peak_parking,
+      speed_limit, design_speed,      perc_single_unit as pct_s_u_pk_hr,
+      coalesce(avg_single_unit,0.0) as avg_single_unit,      perc_combination as pct_comb_pk_hr,
+      coalesce(avg_combination,0.0) as avg_combination,      k_factor,dir_factor,
+      peak_lanes,peak_capacity,      county, locality,link_desc,
+      from_name, to_name     ,
+      CASE WHEN is_metric>0 THEN section_length*0.621371 ELSE section_length END as full_sec_len_miles
+      ,hg.* ,st_length( ST_Intersection(geom4326, hg.geom)  ) as clipped_length
+      from hpms.hpms_data hd
+      join hpms.hpms_link_geom hlg on (hlg.hpms_id=hd.id)
+      join hpms.hpms_geom hg on (hg.id=hlg.geo_id)
+      inner join grid_cell on ( st_intersects(geom4326,geom) )
+      join fips_code fc on (fc.fips = hd.fips) where section_id !~ 'FHWA*' and state_code=6 and year_record=2008 )
+,hpmsgrids_summed as (
+    select cell, hpms_id, sum(clipped_length) as clipped_length
+    from hpms_grid_county group by cell, hpms_id )
+, hpms_links as (
+    select distinct hpms_id
+    from hpmsgrids_summed )
+, hpms_only as (
+    select hpms_id            ,sum(st_length(hg.geom)) as orig_length
+    from hpms_links hgs
+    join hpms.hpms_link_geom hd using (hpms_id)
+    join hpms.hpms_geom hg on (hd.geo_id = hg.id)     group by hpms_id )
+, hpms_fractional as (
+    select cell,hpms_id,clipped_length,orig_length,clipped_length/orig_length as
+clipped_fraction
+    from hpmsgrids_summed hgs
+    join hpms_only htl using (hpms_id) )
+, hpms_fractional_limited as (
+    select cell,hpms_id, clipped_fraction
+    from hpms_fractional   where clipped_fraction > 0.01 )
+, hpms_joined as (
+    select hga.*, clipped_fraction, clipped_fraction*full_sec_len_miles as sec_len_miles
+    from hpms_grid_county hga
+    join hpms_fractional_limited hfl on (hga.hpms_id=hfl.hpms_id)
+)
+select cell,year,route_number,f_system, sum(aadt) as sum_aadt,
+    floor(sum(aadt*sec_len_miles)) as sum_vmt,
+sum(sec_len_miles*through_lanes) as sum_lane_miles,
+floor(sum(avg_single_unit*aadt/100)) as sum_single_unit,
+floor(sum(avg_single_unit*aadt*sec_len_miles/100)) as sum_single_unit_mt,
+floor(sum(avg_combination*aadt/100)) as sum_combination,
+floor(sum(avg_combination*aadt*sec_len_miles/100)) as sum_combination_mt
+from hpms_joined
+group by cell,year,route_number,f_system
+order by cell,year,f_system
+
+
+
+
+-- alameda is failing
+
+with grid_cell as ( select floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell ,geom4326 from carbgrid.state4k grids where (floor(grids.i_cell) || '_'|| floor(grids.j_cell)='132_164') ) ,fips_code as ( select (regexp_matches(fips, '060*(\d*)'))[1] as fips from counties_fips where upper(name)='ALAMEDA' ), hpms_grid_county as (select grid_cell.cell,grid_cell.geom4326,      hd.id as hpms_id, year_record as year, state_code,is_metric,hd.fips,begin_lrs,end_lrs,      route_number, type_facility,f_system,gf_system, aadt,through_lanes,      lane_width, peak_parking,      speed_limit, design_speed,      perc_single_unit as pct_s_u_pk_hr,      coalesce(avg_single_unit,0.0) as avg_single_unit,      perc_combination as pct_comb_pk_hr,      coalesce(avg_combination,0.0) as avg_combination,      k_factor,dir_factor,      peak_lanes,peak_capacity,      county, locality,link_desc,from_name, to_name     ,CASE WHEN is_metric>0 THEN section_length*0.621371 ELSE section_length END as full_sec_len_miles ,hg.* ,st_length( ST_Intersection(geom4326, hg.geom)  ) as clipped_length from hpms.hpms_data hd      join hpms.hpms_link_geom hlg on (hlg.hpms_id=hd.id)      join hpms.hpms_geom hg on (hg.id=hlg.geo_id)      inner join grid_cell on ( st_intersects(geom4326,geom) )      join fips_code fc on (fc.fips = hd.fips) where section_id !~ 'FHWA*' and state_code=6 and year_record=2008 )
+,hpmsgrids_summed as (   select cell, hpms_id, sum(clipped_length) as clipped_length   from hpms_grid_county group by cell, hpms_id ) , hpms_links as (     select distinct hpms_id from hpmsgrids_summed ) , hpms_only as (     select hpms_id            ,sum(st_length(hg.geom)) as orig_length     from hpms_links hgs     join hpms.hpms_link_geom hd using (hpms_id)     join hpms.hpms_geom hg on (hd.geo_id = hg.id)     group by hpms_id ) , hpms_fractional as (     select cell,hpms_id,clipped_length,orig_length,clipped_length/orig_length as clipped_fraction     from hpmsgrids_summed hgs     join hpms_only htl using (hpms_id) ) , hpms_fractional_limited as (   select cell,hpms_id, clipped_fraction   from hpms_fractional   where clipped_fraction > 0.01 )
+, hpms_joined as (   select hga.*, clipped_fraction, clipped_fraction*full_sec_len_miles as sec_len_miles   from hpms_grid_county hga   join hpms_fractional_limited hfl on (hga.hpms_id=hfl.hpms_id) )
+select cell,year,route_number,f_system, sum(aadt) as sum_aadt,  floor(sum(aadt*sec_len_miles)) as sum_vmt, sum(sec_len_miles*through_lanes) as sum_lane_miles, floor(sum(avg_single_unit*aadt/100)) as sum_single_unit, floor(sum(avg_single_unit*aadt*sec_len_miles/100)) as sum_single_unit_mt, floor(sum(avg_combination*aadt/100)) as sum_combination,                 floor(sum(avg_combination*aadt*sec_len_miles/100)) as sum_combination_mt from hpms_joined  group by cell,year,route_number,f_system  order by cell,year,f_system
+
+-- looks fine.  only picking off I80 links, before was probably
+-- getting things in other counties?
