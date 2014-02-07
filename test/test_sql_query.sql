@@ -729,7 +729,7 @@ totals:   |  51787510 |    905610 |   1336974
 My way is too high, by almost twice
 
 
-Apparently, the above select using county
+-- Apparently, the above select using county
 
 
 -- try to figure out why more links in ALA county that expected
