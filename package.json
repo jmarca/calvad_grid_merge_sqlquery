@@ -17,6 +17,8 @@
   },
   "devDependencies": {
     "config_okay": "0.0.2",
+    "express": "^4.10.4",
+    "request": "^2.49.0",
     "should": "~2.0.2",
     "superagent": "~0.15.7"
   },
@@ -24,7 +26,7 @@
     "async": "~0.2.9",
     "calvad_areas": "git://github.com/jmarca/calvad_areas.git",
     "calvad_compute_aadt": "git://github.com/jmarca/calvad_compute_aadt.git",
-    "lodash": "~2.2.1",
+    "lodash": "^2.2.1",
     "pg": "~2.8.2",
     "queue-async": "^1.0.7"
   }
