@@ -2,7 +2,7 @@
   "name": "calvad_grid_merge",
   "version": "0.0.1",
   "description": "Code for merging hpms and detector values",
-  "main": "app.js",
+  "main": "index.js",
   "scripts": {
     "test": "mocha"
   },
