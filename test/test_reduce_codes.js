@@ -71,8 +71,19 @@ describe('post process sql queries',function(){
                   return null
               }
            ]
-                         ,function(atask,btask){
+                         ,function(err,results){
+                              var atask = results[0]
+                              var btask = results[1]
                               // does js use references?
+                              //console.log('atask'+atask.accum.length)
+                              //console.log('btask'+btask.accum.length)
+                              // yes it does
+
+                              // for some reason, when working over a
+                              // slow DB connection, this test will
+                              // fail when running mocha on all tests
+                              // at once, but not when running mocha
+                              // on just this test
                               task.should.have.property('accum').with.lengthOf(8);
                               task.should.have.property('detector_route_numbers')
                               task.detector_route_numbers.should.have.length(1)
