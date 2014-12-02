@@ -9,5 +9,6 @@
  "14" : "Urban Other Principal Arterial (OPA)",
  "16" : "Urban Minor Arterial (MA)",
  "17" : "Urban Collector (COL)",
- "19" : "Urban Local (LOC)"
+ "19" : "Urban Local (LOC)",
+ "detector_based":"Detector Based HWY Data"
 }
