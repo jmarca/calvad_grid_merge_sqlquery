@@ -1,6 +1,6 @@
-/test.config.json
-/config.json
-\#*
+**/test.config.json
+**/config.json
 .#*
 .~*
 *~
+**/node_modules/
