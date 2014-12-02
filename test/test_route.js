@@ -78,7 +78,7 @@ describe('basic hpms_data route',function(){
                            var doc = JSON.parse(b)
 
 
-                        doc.should.have.lengthOf(3)
+                        doc.should.have.lengthOf(4)
                            doc[0].should.have.keys('sum_vmt'
                                             ,'sum_lane_miles'
                                             ,'sum_single_unit_mt'
@@ -94,7 +94,8 @@ describe('basic hpms_data route',function(){
                         doc[0].should.have.property( 'sum_lane_miles').with.approximately((17.15+2.6+.34),0.01)
                         doc[0].should.have.property( 'sum_single_unit_mt').with.approximately((3383+480+0),0.01)
                         doc[0].should.have.property( 'sum_combination_mt').with.approximately((950+0+0),0.01)
-
+                           doc[3].should.have.property('f_system','totals')
+                           doc[3].should.have.property('road_type','totals')
                         return done()
                     })
         return null
@@ -124,7 +125,7 @@ describe('using exported hpms_data handler, my own route',function(){
                            var doc = JSON.parse(b)
 
 
-                        doc.should.have.lengthOf(3)
+                        doc.should.have.lengthOf(4)
                            doc[0].should.have.keys('sum_vmt'
                                             ,'sum_lane_miles'
                                             ,'sum_single_unit_mt'
@@ -140,6 +141,8 @@ describe('using exported hpms_data handler, my own route',function(){
                         doc[0].should.have.property( 'sum_lane_miles').with.approximately((17.15+2.6+.34),0.01)
                         doc[0].should.have.property( 'sum_single_unit_mt').with.approximately((3383+480+0),0.01)
                         doc[0].should.have.property( 'sum_combination_mt').with.approximately((950+0+0),0.01)
+                           doc[3].should.have.property('f_system','totals')
+                           doc[3].should.have.property('road_type','totals')
 
                         return done()
                     })
@@ -169,7 +172,7 @@ describe('more basic hpms_data route',function(){
                            var doc = JSON.parse(b)
 
 
-                        doc.should.have.lengthOf(5)
+                        doc.should.have.lengthOf(6)
                         doc[0].should.have.keys('sum_vmt'
                                             ,'sum_lane_miles'
                                             ,'sum_single_unit_mt'
@@ -191,6 +194,10 @@ describe('more basic hpms_data route',function(){
                         doc[2].should.have.property( 'sum_lane_miles').with.approximately((17.15+2.6+.34),0.01)
                         doc[2].should.have.property( 'sum_single_unit_mt').with.approximately((3383+480+0),0.01)
                         doc[2].should.have.property( 'sum_combination_mt').with.approximately((950+0+0),0.01)
+
+                           doc[5].should.have.property('f_system','totals')
+                           doc[5].should.have.property('road_type','totals')
+                           doc[5].should.have.property( 'sum_vmt').with.approximately((20119+95487+93787+16001+3747+4507+51935+61562),0.1)
 
                         return done()
                     })
