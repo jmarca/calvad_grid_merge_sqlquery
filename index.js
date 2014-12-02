@@ -14,3 +14,4 @@ var route = require('./lib/routes.js')
 
 exports.hpms_data_route = route.hpms_data_route
 exports.hpms_data_nodetectors_route=route.hpms_data_nodetectors_route
+exports.hpms_data_handler=route.hpms_data_handler

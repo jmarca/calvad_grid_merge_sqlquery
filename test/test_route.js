@@ -21,6 +21,26 @@ var request = require('request')
 
 var server_host = 'http://'+testhost + ':'+testport
 
+
+var my_handler = function(config,app){
+    app.get('/hpms/datatoo/:j/:i/:yr.:format?'
+           ,function(req,res,next){
+                var task={'cell_id':req.params.i+'_'+req.params.j
+                         ,'cell_i':req.params.i
+                         ,'cell_j':req.params.j
+                         ,'year':req.params.yr}
+                task.options=config
+                routes.hpms_data_handler(task,function(err,result){
+                    if(err) return next(err)
+                    res.json(result)
+                    return null
+                })
+                return null
+            })
+
+}
+
+
 before(
     function(done){
 
@@ -29,6 +49,7 @@ before(
 
             hpms_data_route(c,app)
             hpms_data_nodetectors_route(c,app)
+            my_handler(c,app)
             app.listen(testport,testhost,done)
 
         })
@@ -49,6 +70,52 @@ describe('basic hpms_data route',function(){
                       +task.year+'/'
                       +task.i+'/'
                       +task.j+'.json'
+                      ,function(e,r,b){
+                           should.not.exist(e)
+                           should.exist(r)
+                           should.exist(b)
+
+                           var doc = JSON.parse(b)
+
+
+                        doc.should.have.lengthOf(3)
+                           doc[0].should.have.keys('sum_vmt'
+                                            ,'sum_lane_miles'
+                                            ,'sum_single_unit_mt'
+                                            ,'sum_combination_mt'
+                                            ,'f_system'
+                                            ,'road_type'
+                                                  ,'year'
+                                                  ,'cell_i'
+                                                  ,'cell_j'
+                                                  )
+                           doc[0].should.have.property('f_system','14')
+                        doc[0].should.have.property( 'sum_vmt').with.approximately((93787+16001+3747),0.1)
+                        doc[0].should.have.property( 'sum_lane_miles').with.approximately((17.15+2.6+.34),0.01)
+                        doc[0].should.have.property( 'sum_single_unit_mt').with.approximately((3383+480+0),0.01)
+                        doc[0].should.have.property( 'sum_combination_mt').with.approximately((950+0+0),0.01)
+
+                        return done()
+                    })
+        return null
+    })
+})
+
+describe('using exported hpms_data handler, my own route',function(){
+    var yr = 2009
+    it('should  handle a detectorized grid cell'
+      ,function(done){
+           var task={'i':'189',j:'72'
+                    ,'year': yr
+                    }
+
+           request.get(server_host
+                      +'/'
+                      +'hpms/datatoo/'
+                      +task.j+'/'
+                      +task.i+'/'
+                      +task.year
+                      +'.json'
                       ,function(e,r,b){
                            should.not.exist(e)
                            should.exist(r)
