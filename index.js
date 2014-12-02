@@ -9,3 +9,7 @@ exports.apply_fractions=r.apply_fractions
 exports.reduce=r.reduce
 var f_system = require('./lib/f_system.json')
 exports.f_system=f_system
+
+var route = require('./lib/routes.js')
+
+exports.hpms_data_route = route.hpms_data_route
