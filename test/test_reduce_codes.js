@@ -109,10 +109,10 @@ describe('post process sql queries',function(){
                                                    ,'sum_lane_miles'
                                                    ,'sum_single_unit_mt'
                                                    ,'sum_combination_mt')
-                                  task.aadt_store['14'].should.have.property( 'sum_vmt').with.approximately((93787+16001+3747),0.1)
-                                  task.aadt_store['14'].should.have.property( 'sum_lane_miles').with.approximately((17.15+2.6+.34),0.01)
-                                  task.aadt_store['14'].should.have.property( 'sum_single_unit_mt').with.approximately((3383+480+0),0.01)
-                                  task.aadt_store['14'].should.have.property( 'sum_combination_mt').with.approximately((950+0+0),0.01)
+                                  task.aadt_store['14'].should.have.property( 'sum_vmt').with.approximately(           (93787+16001+3747),0.1)
+                                  task.aadt_store['14'].should.have.property( 'sum_lane_miles').with.approximately(    (17.15+2.6+.34   ),0.01)
+                                  task.aadt_store['14'].should.have.property( 'sum_single_unit_mt').with.approximately((3383+480+0      ),0.01)
+                                  task.aadt_store['14'].should.have.property( 'sum_combination_mt').with.approximately((950+0+0         ),0.01)
 
                                   task.aadt_store.should.have.property('16')
                                   task.aadt_store['16']
@@ -120,10 +120,10 @@ describe('post process sql queries',function(){
                                                    ,'sum_lane_miles'
                                                    ,'sum_single_unit_mt'
                                                    ,'sum_combination_mt')
-                                  task.aadt_store['16'].should.have.property( 'sum_vmt').with.approximately((4507+51935),0.1)
-                                  task.aadt_store['16'].should.have.property( 'sum_lane_miles').with.approximately((2.9+11.37),0.01)
-                                  task.aadt_store['16'].should.have.property( 'sum_single_unit_mt').with.approximately((90+306),0.01)
-                                  task.aadt_store['16'].should.have.property( 'sum_combination_mt').with.approximately((0+97),0.01)
+                                  task.aadt_store['16'].should.have.property( 'sum_vmt').with.approximately(           (4507+51935),0.1)
+                                  task.aadt_store['16'].should.have.property( 'sum_lane_miles').with.approximately(    (2.9+11.37 ),0.01)
+                                  task.aadt_store['16'].should.have.property( 'sum_single_unit_mt').with.approximately((90+306    ),0.01)
+                                  task.aadt_store['16'].should.have.property( 'sum_combination_mt').with.approximately((0+97      ),0.01)
 
                                   task.aadt_store.should.have.property('17')
                                   task.aadt_store['17']
@@ -136,7 +136,18 @@ describe('post process sql queries',function(){
                                   task.aadt_store['17'].should.have.property( 'sum_single_unit_mt').with.approximately(130,0.01)
                                   task.aadt_store['17'].should.have.property( 'sum_combination_mt').with.approximately(0,0.01)
 
-                                  return done()
+                                  // call the rereduce code
+                                  reduce.reduce_aadt_store(task,function(err,t3){
+                                      should.not.exist(err)
+                                      should.exist(t3)
+                                      task.should.have.property('aadt_totals')
+                                      task.aadt_totals.should.have.property( 'sum_vmt').with.approximately           (93787+16001+3747+4507+51935+61562,0.1)
+                                      task.aadt_totals.should.have.property( 'sum_lane_miles').with.approximately    (17.15+2.6+.34   +2.9+11.37 +39.82,0.1)
+                                      task.aadt_totals.should.have.property( 'sum_single_unit_mt').with.approximately(3383+480+0      +90+306    +130,0.1)
+                                      task.aadt_totals.should.have.property( 'sum_combination_mt').with.approximately(950+0+0         +0+97      +0,0.1)
+
+                                      return done()
+                                  })
                               })
                           })
 
