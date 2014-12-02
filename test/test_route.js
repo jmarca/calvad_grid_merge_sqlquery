@@ -63,7 +63,11 @@ describe('basic hpms_data route',function(){
                                             ,'sum_single_unit_mt'
                                             ,'sum_combination_mt'
                                             ,'f_system'
-                                            ,'road_type')
+                                            ,'road_type'
+                                                  ,'year'
+                                                  ,'cell_i'
+                                                  ,'cell_j'
+                                                  )
                            doc[0].should.have.property('f_system','14')
                         doc[0].should.have.property( 'sum_vmt').with.approximately((93787+16001+3747),0.1)
                         doc[0].should.have.property( 'sum_lane_miles').with.approximately((17.15+2.6+.34),0.01)
@@ -104,7 +108,11 @@ describe('more basic hpms_data route',function(){
                                             ,'sum_single_unit_mt'
                                             ,'sum_combination_mt'
                                             ,'f_system'
-                                            ,'road_type')
+                                               ,'road_type'
+                                               ,'year'
+                                               ,'cell_i'
+                                               ,'cell_j'
+                                               )
                            doc[0].should.have.property('f_system','2')
                         doc[0].should.have.property( 'sum_vmt').with.approximately(20119,0.1)
                         doc[0].should.have.property( 'sum_lane_miles').with.approximately(2.77,0.01)
