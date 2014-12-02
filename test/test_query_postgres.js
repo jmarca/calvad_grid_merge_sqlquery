@@ -8,11 +8,14 @@ var get_hpms_aadt = require('../lib/query_postgres').get_hpms_from_sql
 var get_detector_routes = require('../lib/query_postgres').get_detector_route_nums
 var fs = require('fs')
 
-var config_okay = require('../lib/config_okay')
+var config_okay = require('config_okay')
+var path = require('path')
+var rootdir = path.normalize(__dirname)
+var config_file = rootdir+'/../test.config.json'
 
 var config
 before(function(done){
-    config_okay('test.config.json',function(err,c){
+    config_okay(config_file,function(err,c){
         config ={'postgres':c.postgres
                 ,'couchdb':c.couchdb}
 
