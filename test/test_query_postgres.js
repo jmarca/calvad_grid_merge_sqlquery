@@ -2,7 +2,6 @@
 
 var should = require('should')
 
-var async = require('async')
 var _ = require('lodash')
 var get_hpms_aadt = require('../lib/query_postgres').get_hpms_from_sql
 var get_detector_routes = require('../lib/query_postgres').get_detector_route_nums
