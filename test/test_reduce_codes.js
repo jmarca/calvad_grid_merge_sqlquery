@@ -2,7 +2,7 @@
 
 var should = require('should')
 
-var async = require('async')
+var queue = require("queue-async")
 var _ = require('lodash')
 
 var reduce = require('../lib/reduce')
@@ -42,7 +42,8 @@ describe('post process sql queries',function(){
                     ,'year':yr
                     ,'options':config
                     }
-           async.parallel([
+           queue(2)
+           .defer(
                function(cb){
                    get_hpms_aadt(task
                            ,function(err,cbtask){
@@ -53,7 +54,9 @@ describe('post process sql queries',function(){
                             });
                    return null
                }
-             ,function(cb){
+           )
+           .defer(
+               function(cb){
                   get_detector_routes(task
                                      ,function(err,cbtask){
                                           // err should not exist
@@ -70,88 +73,91 @@ describe('post process sql queries',function(){
                                       })
                   return null
               }
-           ]
-                         ,function(err,results){
-                              var atask = results[0]
-                              var btask = results[1]
-                              // does js use references?
-                              //console.log('atask'+atask.accum.length)
-                              //console.log('btask'+btask.accum.length)
-                              // yes it does
+           )
+           .await(function(err,atask,btask){
+               // does js use references?
+               //console.log('atask'+atask.accum.length)
+               //console.log('btask'+btask.accum.length)
+               // yes it does
 
-                              // for some reason, when working over a
-                              // slow DB connection, this test will
-                              // fail when running mocha on all tests
-                              // at once, but not when running mocha
-                              // on just this test
-                              task.should.have.property('accum').with.lengthOf(8);
-                              task.should.have.property('detector_route_numbers')
-                              task.detector_route_numbers.should.have.length(1)
-                              // if those tests passed, then node.js
-                              // is still pass by reference and is
-                              // modifying refs in subroutines
+               // ah, but async-queue is better than that?
+               //
+               // for some reason, when working over a
+               // slow DB connection, this test will
+               // fail when running mocha on all tests
+               // at once, but not when running mocha
+               // on just this test
+               task.should.have.property('accum').with.lengthOf(8);
+               task.should.have.property('detector_route_numbers')
+               task.detector_route_numbers.should.have.length(1)
+               // if those tests passed, then node.js
+               // is still pass by reference and is
+               // modifying refs in subroutines
 
-                              //  call the merge code
-                              reduce.post_process_sql_queries(task,function(err,cbtask){
-                                  should.not.exist(err)
-                                  should.exist(cbtask)
-                                  task.should.have.property('class_map')
-                                  _.size(task.class_map).should.eql(1)
-                                  var route_classifications = _.keys(task.class_map)
-                                  route_classifications.sort()
-                                  route_classifications.should.eql(['101'])
-                                  task.should.have.property('aadt_store')
-                                  _.size(task.aadt_store).should.eql(3)
-                                  //console.log(task.aadt_store)
-                                  task.aadt_store.should.have.property('14')
-                                  task.aadt_store['14']
-                                  .should.have.keys('sum_vmt'
-                                                   ,'sum_lane_miles'
-                                                   ,'sum_single_unit_mt'
-                                                   ,'sum_combination_mt')
-                                  task.aadt_store['14'].should.have.property( 'sum_vmt').with.approximately(           (93787+16001+3747),0.1)
-                                  task.aadt_store['14'].should.have.property( 'sum_lane_miles').with.approximately(    (17.15+2.6+.34   ),0.01)
-                                  task.aadt_store['14'].should.have.property( 'sum_single_unit_mt').with.approximately((3383+480+0      ),0.01)
-                                  task.aadt_store['14'].should.have.property( 'sum_combination_mt').with.approximately((950+0+0         ),0.01)
+               //  call the merge code
+               reduce.post_process_sql_queries(task,function(err,cbtask){
+                   should.not.exist(err)
+                   should.exist(cbtask)
+                   task.should.have.property('class_map')
+                   _.size(task.class_map).should.eql(1)
+                   var route_classifications = _.keys(task.class_map)
+                   route_classifications.sort()
+                   route_classifications.should.eql(['101'])
+                   task.should.have.property('aadt_store')
+                   _.size(task.aadt_store).should.eql(3)
+                   //console.log(task.aadt_store)
+                   task.aadt_store.should.have.property('14')
+                   task.aadt_store['14']
+                   .should.have.keys('sum_vmt'
+                                    ,'sum_lane_miles'
+                                    ,'sum_single_unit_mt'
+                                    ,'sum_combination_mt')
+                   task.aadt_store['14'].should.have.property( 'sum_vmt').with.approximately(           (93787+16001+3747),0.1)
+                   task.aadt_store['14'].should.have.property( 'sum_lane_miles').with.approximately(    (17.15+2.6+.34   ),0.01)
+                   task.aadt_store['14'].should.have.property( 'sum_single_unit_mt').with.approximately((3383+480+0      ),0.01)
+                   task.aadt_store['14'].should.have.property( 'sum_combination_mt').with.approximately((950+0+0         ),0.01)
 
-                                  task.aadt_store.should.have.property('16')
-                                  task.aadt_store['16']
-                                  .should.have.keys('sum_vmt'
-                                                   ,'sum_lane_miles'
-                                                   ,'sum_single_unit_mt'
-                                                   ,'sum_combination_mt')
-                                  task.aadt_store['16'].should.have.property( 'sum_vmt').with.approximately(           (4507+51935),0.1)
-                                  task.aadt_store['16'].should.have.property( 'sum_lane_miles').with.approximately(    (2.9+11.37 ),0.01)
-                                  task.aadt_store['16'].should.have.property( 'sum_single_unit_mt').with.approximately((90+306    ),0.01)
-                                  task.aadt_store['16'].should.have.property( 'sum_combination_mt').with.approximately((0+97      ),0.01)
+                   task.aadt_store.should.have.property('16')
+                   task.aadt_store['16']
+                   .should.have.keys('sum_vmt'
+                                    ,'sum_lane_miles'
+                                    ,'sum_single_unit_mt'
+                                    ,'sum_combination_mt')
+                   task.aadt_store['16'].should.have.property( 'sum_vmt').with.approximately(           (4507+51935),0.1)
+                   task.aadt_store['16'].should.have.property( 'sum_lane_miles').with.approximately(    (2.9+11.37 ),0.01)
+                   task.aadt_store['16'].should.have.property( 'sum_single_unit_mt').with.approximately((90+306    ),0.01)
+                   task.aadt_store['16'].should.have.property( 'sum_combination_mt').with.approximately((0+97      ),0.01)
 
-                                  task.aadt_store.should.have.property('17')
-                                  task.aadt_store['17']
-                                  .should.have.keys('sum_vmt'
-                                                   ,'sum_lane_miles'
-                                                   ,'sum_single_unit_mt'
-                                                   ,'sum_combination_mt')
-                                  task.aadt_store['17'].should.have.property( 'sum_vmt').with.approximately(61562,0.1)
-                                  task.aadt_store['17'].should.have.property( 'sum_lane_miles').with.approximately(39.82,0.01)
-                                  task.aadt_store['17'].should.have.property( 'sum_single_unit_mt').with.approximately(130,0.01)
-                                  task.aadt_store['17'].should.have.property( 'sum_combination_mt').with.approximately(0,0.01)
+                   task.aadt_store.should.have.property('17')
+                   task.aadt_store['17']
+                   .should.have.keys('sum_vmt'
+                                    ,'sum_lane_miles'
+                                    ,'sum_single_unit_mt'
+                                    ,'sum_combination_mt')
+                   task.aadt_store['17'].should.have.property( 'sum_vmt').with.approximately(61562,0.1)
+                   task.aadt_store['17'].should.have.property( 'sum_lane_miles').with.approximately(39.82,0.01)
+                   task.aadt_store['17'].should.have.property( 'sum_single_unit_mt').with.approximately(130,0.01)
+                   task.aadt_store['17'].should.have.property( 'sum_combination_mt').with.approximately(0,0.01)
 
-                                  // call the rereduce code
-                                  reduce.reduce_aadt_store(task,function(err,t3){
-                                      should.not.exist(err)
-                                      should.exist(t3)
-                                      task.should.have.property('aadt_totals')
-                                      task.aadt_totals.should.have.property( 'sum_vmt').with.approximately           (93787+16001+3747+4507+51935+61562,0.1)
-                                      task.aadt_totals.should.have.property( 'sum_lane_miles').with.approximately    (17.15+2.6+.34   +2.9+11.37 +39.82,0.1)
-                                      task.aadt_totals.should.have.property( 'sum_single_unit_mt').with.approximately(3383+480+0      +90+306    +130,0.1)
-                                      task.aadt_totals.should.have.property( 'sum_combination_mt').with.approximately(950+0+0         +0+97      +0,0.1)
+                   // call the rereduce code
+                   reduce.reduce_aadt_store(task,function(err,t3){
+                       should.not.exist(err)
+                       should.exist(t3)
+                       task.should.have.property('aadt_totals')
+                       task.aadt_totals.should.have.property( 'sum_vmt').with.approximately           (93787+16001+3747+4507+51935+61562,0.1)
+                       task.aadt_totals.should.have.property( 'sum_lane_miles').with.approximately    (17.15+2.6+.34   +2.9+11.37 +39.82,0.1)
+                       task.aadt_totals.should.have.property( 'sum_single_unit_mt').with.approximately(3383+480+0      +90+306    +130,0.1)
+                       task.aadt_totals.should.have.property( 'sum_combination_mt').with.approximately(950+0+0         +0+97      +0,0.1)
 
-                                      return done()
-                                  })
-                              })
-                          })
-
+                       return done()
+                   })
+                   return null
+               })
+               return null
+           })
+           return null
        })
+    return null
 })
 
 /**
