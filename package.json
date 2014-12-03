@@ -23,8 +23,7 @@
     "superagent": "~0.15.7"
   },
   "dependencies": {
-    "async": "~0.2.9",
-    "calvad_areas": "git://github.com/jmarca/calvad_areas.git",
+     "calvad_areas": "git://github.com/jmarca/calvad_areas.git",
     "calvad_compute_aadt": "git://github.com/jmarca/calvad_compute_aadt.git",
     "lodash": "^2.2.1",
     "pg": "~2.8.2",
