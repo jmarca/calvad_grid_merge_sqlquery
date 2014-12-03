@@ -100,6 +100,31 @@ describe('basic hpms_data route',function(){
                     })
         return null
     })
+    it('should  handle an empty cell'
+      ,function(done){
+           var task={'i':'100',j:'223'
+                    ,'year': yr
+                    }
+
+           request.get(server_host
+                      +'/'
+                      +'hpms/data/'
+                      +task.year+'/'
+                      +task.i+'/'
+                      +task.j+'.json'
+                      ,function(e,r,b){
+                           should.not.exist(e)
+                           should.exist(r)
+                           should.exist(b)
+
+                           var doc = JSON.parse(b)
+                        doc.should.have.lengthOf(0)
+
+                        return done()
+                    })
+        return null
+    })
+
 })
 
 describe('using exported hpms_data handler, my own route',function(){
