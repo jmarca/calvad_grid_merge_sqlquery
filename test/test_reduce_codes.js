@@ -25,7 +25,7 @@ var test_db_unique = date.getHours()+'-'
 var config
 before(function(done){
     config_okay(config_file,function(err,c){
-        config ={'postgres':c.postgres
+        config ={'postgresql':c.postgresql
                 ,'couchdb':c.couchdb}
 
         return done()
