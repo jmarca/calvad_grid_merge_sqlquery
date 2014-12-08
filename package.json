@@ -16,7 +16,7 @@
     "url": "https://github.com/jmarca/calvad_grid_merge_sqlquery/issues"
   },
   "devDependencies": {
-    "config_okay": "0.0.2",
+    "config_okay": "",
     "express": "^4.10.4",
     "request": "^2.49.0",
     "should": "~2.0.2",
@@ -25,8 +25,8 @@
   "dependencies": {
      "calvad_areas": "git://github.com/jmarca/calvad_areas.git",
     "calvad_compute_aadt": "git://github.com/jmarca/calvad_compute_aadt.git",
-    "lodash": "^2.2.1",
+    "lodash": "",
     "pg": "~2.8.2",
-    "queue-async": "^1.0.7"
+    "queue-async": ""
   }
 }
