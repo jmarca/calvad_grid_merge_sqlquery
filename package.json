@@ -26,7 +26,7 @@
      "calvad_areas": "git://github.com/jmarca/calvad_areas.git",
     "calvad_compute_aadt": "git://github.com/jmarca/calvad_compute_aadt.git",
     "lodash": "",
-    "pg": "~2.8.2",
+    "pg": "",
     "queue-async": ""
   }
 }
