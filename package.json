@@ -4,7 +4,9 @@
   "description": "Code querying hpms, grid data from sql",
   "main": "index.js",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha -R list --timeout 50000 ./test/test_*.js",
+    "test-travis": "istanbul cover ./node_modules/.bin/_mocha -- -R spec --check-leaks --timeout 50000 ./test/test_*js",
+    "jsdoc": "jsdoc -c .jsdoc.json"
   },
   "repository": {
     "type": "git",
@@ -18,10 +20,12 @@
   "devDependencies": {
     "config_okay": "",
     "express": "^4.10.4",
+    "ink-docstrap": "^1.1.4",
+    "jsdoc": "^3.4.0",
     "mocha": "^2.4.5",
     "request": "^2.49.0",
-    "should": "~2.0.2",
-    "superagent": "~0.15.7"
+    "should": "",
+    "superagent": ""
   },
   "dependencies": {
     "calvad_areas": "git://github.com/jmarca/calvad_areas.git",
