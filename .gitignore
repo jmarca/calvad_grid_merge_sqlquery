@@ -4,4 +4,5 @@
 .~*
 *~
 **/node_modules/
-.tern_port
+*tern_port
+**/.tern-port
