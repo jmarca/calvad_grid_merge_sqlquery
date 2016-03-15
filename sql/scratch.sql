@@ -116,6 +116,11 @@ districtgrids as
   (select distinct c.cell, '"airdistrict":"'||a.disn||'","dis":"'|| a.dis ||'"' as districtstr
    from alldetectors c
    join public.carb_airdistricts_aligned_03 a on (st_contains(a.geom4326,c.centroid))
+   ),
+basingrids as
+  (select distinct c.cell, '"airbasin":"'||a.basin_name||'","bas":"'|| a.ab ||'"' as basinstr
+   from alldetectors c
+   join public.carb_airbasins_aligned_03 a on (st_contains(a.geom4326,c.centroid))
    )
 select  '"'|| cell ||'":{'|| basinstr || ',' || countystr || ',' || districtstr ||  '},' as jsonstr
 from basingrids
