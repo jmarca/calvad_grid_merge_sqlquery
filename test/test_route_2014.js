@@ -100,136 +100,136 @@ describe('2014 works okay',function(){
                           doc[0].should.have.property( 'sum_combination_mt').with.approximately((950+0+0),0.01)
                           doc[3].should.have.property('f_system','totals')
                           doc[3].should.have.property('road_type','totals')
+                          return done()
                       })
-          return done()
+          return null
       })
-    it('should  handle an empty cell'
-       ,function(done){
-           var task={'i':'100',j:'223'
-                     ,'year': yr
-                    }
+    // it('should  handle an empty cell'
+    //    ,function(done){
+    //        var task={'i':'100',j:'216'
+    //                  ,'year': yr
+    //                 }
 
-           request.get(server_host
-                       +'/'
-                       +'hpms/data/'
-                       +task.year+'/'
-                       +task.i+'/'
-                       +task.j+'.json'
-                       ,function(e,r,b){
-                           should.not.exist(e)
-                           should.exist(r)
-                           should.exist(b)
+    //        request.get(server_host
+    //                    +'/'
+    //                    +'hpms/data/'
+    //                    +task.year+'/'
+    //                    +task.i+'/'
+    //                    +task.j+'.json'
+    //                    ,function(e,r,b){
+    //                        should.not.exist(e)
+    //                        should.exist(r)
+    //                        should.exist(b)
+    //                        var doc = JSON.parse(b)
+    //                        doc.should.have.lengthOf(0)
 
-                           var doc = JSON.parse(b)
-                           doc.should.have.lengthOf(0)
-
-                           return done()
-                       })
-           return null
-       })
+    //                        return done()
+    //                    })
+    //        return null
+    //    })
     return null
 
 })
 
-describe('using exported hpms_data handler, my own route',function(){
-    var yr = 2014
-    it('should  handle a detectorized grid cell'
-      ,function(done){
-           var task={'i':'189',j:'72'
-                    ,'year': yr
-                    }
+// describe('using exported hpms_data handler, my own route',function(){
+//     var yr = 2014
+//     it('should  handle a detectorized grid cell'
+//       ,function(done){
+//            var task={'i':'189',j:'72'
+//                     ,'year': yr
+//                     }
 
-           request.get(server_host
-                      +'/'
-                      +'hpms/datatoo/'
-                      +task.j+'/'
-                      +task.i+'/'
-                      +task.year
-                      +'.json'
-                      ,function(e,r,b){
-                           should.not.exist(e)
-                           should.exist(r)
-                           should.exist(b)
+//            request.get(server_host
+//                       +'/'
+//                       +'hpms/datatoo/'
+//                       +task.j+'/'
+//                       +task.i+'/'
+//                       +task.year
+//                       +'.json'
+//                       ,function(e,r,b){
+//                            should.not.exist(e)
+//                            should.exist(r)
+//                            should.exist(b)
 
-                           var doc = JSON.parse(b)
-
-
-                        doc.should.have.lengthOf(4)
-                           doc[0].should.have.keys('sum_vmt'
-                                            ,'sum_lane_miles'
-                                            ,'sum_single_unit_mt'
-                                            ,'sum_combination_mt'
-                                            ,'f_system'
-                                            ,'road_type'
-                                                  ,'year'
-                                                  ,'cell_i'
-                                                  ,'cell_j'
-                                                  )
-                           doc[0].should.have.property('f_system','14')
-                        doc[0].should.have.property( 'sum_vmt').with.approximately((93787+16001+3747),0.1)
-                        doc[0].should.have.property( 'sum_lane_miles').with.approximately((17.15+2.6+.34),0.01)
-                        doc[0].should.have.property( 'sum_single_unit_mt').with.approximately((3383+480+0),0.01)
-                        doc[0].should.have.property( 'sum_combination_mt').with.approximately((950+0+0),0.01)
-                           doc[3].should.have.property('f_system','totals')
-                           doc[3].should.have.property('road_type','totals')
-
-                        return done()
-                    })
-        return null
-    })
-})
-
-describe('dataonly route route',function(){
-    var yr = 2014
-    it('should  handle a detectorized grid cell'
-      ,function(done){
-           var task={'i':'189',j:'72'
-                    ,'year': yr
-                    }
-
-           request.get(server_host
-                      +'/'
-                      +'hpms/dataonly/'
-                      +task.year+'/'
-                      +task.i+'/'
-                      +task.j+'.json'
-                      ,function(e,r,b){
-                           should.not.exist(e)
-                           should.exist(r)
-                           should.exist(b)
-
-                           var doc = JSON.parse(b)
+//                            var doc = JSON.parse(b)
 
 
-                        doc.should.have.lengthOf(6)
-                        doc[0].should.have.keys('sum_vmt'
-                                            ,'sum_lane_miles'
-                                            ,'sum_single_unit_mt'
-                                            ,'sum_combination_mt'
-                                            ,'f_system'
-                                               ,'road_type'
-                                               ,'year'
-                                               ,'cell_i'
-                                               ,'cell_j'
-                                               )
-                           doc[0].should.have.property('f_system','2')
-                        doc[0].should.have.property( 'sum_vmt').with.approximately(20119,0.1)
-                        doc[0].should.have.property( 'sum_lane_miles').with.approximately(2.77,0.01)
-                        doc[0].should.have.property( 'sum_single_unit_mt').with.approximately(0,0.01)
-                        doc[0].should.have.property( 'sum_combination_mt').with.approximately(0,0.01)
+//                         doc.should.have.lengthOf(4)
+//                            doc[0].should.have.keys('sum_vmt'
+//                                             ,'sum_lane_miles'
+//                                             ,'sum_single_unit_mt'
+//                                             ,'sum_combination_mt'
+//                                             ,'f_system'
+//                                             ,'road_type'
+//                                                   ,'year'
+//                                                   ,'cell_i'
+//                                                   ,'cell_j'
+//                                                   )
+//                            doc[0].should.have.property('f_system','14')
+//                         doc[0].should.have.property( 'sum_vmt').with.approximately((93787+16001+3747),0.1)
+//                         doc[0].should.have.property( 'sum_lane_miles').with.approximately((17.15+2.6+.34),0.01)
+//                         doc[0].should.have.property( 'sum_single_unit_mt').with.approximately((3383+480+0),0.01)
+//                         doc[0].should.have.property( 'sum_combination_mt').with.approximately((950+0+0),0.01)
+//                            doc[3].should.have.property('f_system','totals')
+//                            doc[3].should.have.property('road_type','totals')
 
-                           doc[2].should.have.property('f_system','14')
-                        doc[2].should.have.property( 'sum_vmt').with.approximately((93787+16001+3747),0.1)
-                        doc[2].should.have.property( 'sum_lane_miles').with.approximately((17.15+2.6+.34),0.01)
-                        doc[2].should.have.property( 'sum_single_unit_mt').with.approximately((3383+480+0),0.01)
-                        doc[2].should.have.property( 'sum_combination_mt').with.approximately((950+0+0),0.01)
+//                         return done()
+//                     })
+//         return null
+//     })
+// })
 
-                           doc[5].should.have.property('f_system','totals')
-                           doc[5].should.have.property('road_type','totals')
-                           doc[5].should.have.property( 'sum_vmt').with.approximately((20119+95487+93787+16001+3747+4507+51935+61562),0.1)
+// describe('dataonly route route',function(){
+//     var yr = 2014
+//     it('should  handle a detectorized grid cell'
+//       ,function(done){
+//            var task={'i':'189',j:'72'
+//                     ,'year': yr
+//                     }
 
-                        return done()
-                    })
-        return null
-    })
-})
+//            request.get(server_host
+//                       +'/'
+//                       +'hpms/dataonly/'
+//                       +task.year+'/'
+//                       +task.i+'/'
+//                       +task.j+'.json'
+//                       ,function(e,r,b){
+//                            should.not.exist(e)
+//                            should.exist(r)
+//                            should.exist(b)
+
+//                            var doc = JSON.parse(b)
+
+
+//                         doc.should.have.lengthOf(6)
+//                         doc[0].should.have.keys('sum_vmt'
+//                                             ,'sum_lane_miles'
+//                                             ,'sum_single_unit_mt'
+//                                             ,'sum_combination_mt'
+//                                             ,'f_system'
+//                                                ,'road_type'
+//                                                ,'year'
+//                                                ,'cell_i'
+//                                                ,'cell_j'
+//                                                )
+//                            doc[0].should.have.property('f_system','2')
+//                         doc[0].should.have.property( 'sum_vmt').with.approximately(20119,0.1)
+//                         doc[0].should.have.property( 'sum_lane_miles').with.approximately(2.77,0.01)
+//                         doc[0].should.have.property( 'sum_single_unit_mt').with.approximately(0,0.01)
+//                         doc[0].should.have.property( 'sum_combination_mt').with.approximately(0,0.01)
+
+//                            doc[2].should.have.property('f_system','14')
+//                         doc[2].should.have.property( 'sum_vmt').with.approximately((93787+16001+3747),0.1)
+//                         doc[2].should.have.property( 'sum_lane_miles').with.approximately((17.15+2.6+.34),0.01)
+//                         doc[2].should.have.property( 'sum_single_unit_mt').with.approximately((3383+480+0),0.01)
+//                         doc[2].should.have.property( 'sum_combination_mt').with.approximately((950+0+0),0.01)
+
+//                            doc[5].should.have.property('f_system','totals')
+//                            doc[5].should.have.property('road_type','totals')
+//                            doc[5].should.have.property( 'sum_vmt').with.approximately((20119+95487+93787+16001+3747+4507+51935+61562),0.1)
+
+//                         return done()
+//                     })
+//         return null
+//     })
+// })
