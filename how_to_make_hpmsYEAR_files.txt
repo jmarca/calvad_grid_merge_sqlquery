@@ -1,0 +1,1 @@
+curl localhost:3000/hpms/data/2014.json > hpms2014.json
