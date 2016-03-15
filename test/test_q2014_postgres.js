@@ -35,11 +35,11 @@ describe('get_hpms_from_sql',function(){
                should.exist(cbtask)
                cbtask.should.have.property('accum').with.lengthOf(6);
                cbtask.accum.forEach(function(row){
-                   Object.keys(row).should.have.length(5)
+                   Object.keys(row).should.have.length(6)
                    row.should.have.property('cell','189_72')
                    row.should.have.property('year',yr)
-                   row.should.have.property('classify')
-                   row.classify.should.not.eql('NULL')
+                   row.should.have.property('f_system')
+                   row.f_system.should.not.eql('NULL')
                    row.should.have.property('sum_aadt')
                    row.should.have.property('sum_vmt')
                })
