@@ -30,8 +30,11 @@
   "dependencies": {
     "calvad_areas": "git://github.com/jmarca/calvad_areas.git",
     "calvad_compute_aadt": "git://github.com/jmarca/calvad_compute_aadt.git",
+    "calvad_db_city_abbreviations": "github:jmarca/calvad_db_city_abbreviations",
+    "calvad_hpms_new_table": "git://github.com/jmarca/calvad_hpms_new_table.git",
+    "tdetector": "git://github.com/jmarca/tdetector.git",
     "lodash": "",
-    "pg": "",
+    "pg": "^6.1.2",
     "queue-async": ""
   }
 }

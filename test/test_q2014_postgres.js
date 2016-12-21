@@ -22,7 +22,7 @@ before(function(done){
 
 var yr = 2014
 
-describe('get_hpms_from_sql',function(){
+describe('get_hpms_from_sql (2014)',function(){
     it('should get data from sql, 2014 table'
        ,function(done){
            var task={'cell_id':'189_72'
