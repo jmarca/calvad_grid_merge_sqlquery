@@ -1,1 +1,5 @@
+hit grid_display server with:
+
 curl localhost:3000/hpms/data/2014.json > hpms2014.json
+
+It will hit the code "all_hpms_handler"
