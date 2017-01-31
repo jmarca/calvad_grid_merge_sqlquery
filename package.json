@@ -18,7 +18,6 @@
     "url": "https://github.com/jmarca/calvad_grid_merge_sqlquery/issues"
   },
   "devDependencies": {
-    "config_okay": "",
     "express": "^4.10.4",
     "ink-docstrap": "^1.1.4",
     "jsdoc": "^3.4.0",
@@ -32,9 +31,11 @@
     "calvad_compute_aadt": "git://github.com/jmarca/calvad_compute_aadt.git",
     "calvad_db_city_abbreviations": "github:jmarca/calvad_db_city_abbreviations",
     "calvad_hpms_new_table": "git://github.com/jmarca/calvad_hpms_new_table.git",
-    "tdetector": "git://github.com/jmarca/tdetector.git",
+    "config_okay": "",
+    "d3-queue": "^3.0.3",
     "lodash": "",
+    "optimist": "^0.6.1",
     "pg": "^6.1.2",
-    "queue-async": ""
+    "tdetector": "git://github.com/jmarca/tdetector.git"
   }
 }
