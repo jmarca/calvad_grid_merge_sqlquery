@@ -1,6 +1,6 @@
 {
   "name": "calvad_grid_merge_sqlquery",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Code querying hpms, grid data from sql",
   "main": "index.js",
   "scripts": {
