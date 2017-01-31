@@ -49,16 +49,15 @@ config.json to work properly.  This should look something like:
         "username":"mydbuser",
         "host":"127.0.0.1",
         "port":5432,
-        "detector_display_db":"osmdatabase",
         "grid_merge_sqlquery_db":"hpmsdatabase"
     }
 }
 ```
 
 Change the variables to reflect where you put the hpms data and where
-you put the OSM data.  On my machine, the value for
-`grid_merge_sqlquery_db` is "spatialvds", and the value for
-`detector_display_db` is "osm".
+you put the OSM data.  On a server, the value for
+`grid_merge_sqlquery_db` is "spatialvds".  For a test case, the value
+might be "hpmstesting".
 
 Make sure this file is called "config.json" and that the permissions
 are correct:
