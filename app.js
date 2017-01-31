@@ -9,7 +9,7 @@ var config_okay=require('config_okay')
 
 var optimist = require('optimist')
 var year, jobs, filename
-var queue = require('d3-queue').queue
+var jsonfile = require('jsonfile')
 var argv = optimist
            .usage('glob up HPMS records by grid for the given year.  Write a json file.\nUsage: $0')
            .options('j',{'default':4
@@ -53,16 +53,12 @@ config_okay(config_file,function(err,config){
         if(e){
             throw new Error(e)
         }
-        fs.writeFile(filename
-                     , JSON.stringify(results,null,' ')
-                     , 'utf8'
-                     , function(e,r){
-                         if(e){
-                             throw new Error(e)
-                         }
-                         console.log('done writing '+filename)
-                         return null
-                     })
+        jsonfile.writeFile(filename, results, function (err) {
+            if(err){
+                console.error(err)
+            }
+            return null
+        })
         return null
     })
     return null

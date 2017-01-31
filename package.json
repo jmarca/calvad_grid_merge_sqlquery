@@ -33,9 +33,11 @@
     "calvad_hpms_new_table": "git://github.com/jmarca/calvad_hpms_new_table.git",
     "config_okay": "",
     "d3-queue": "^3.0.3",
+    "jsonfile": "^2.4.0",
     "lodash": "",
     "optimist": "^0.6.1",
     "pg": "^6.1.2",
+    "pg-pool": "^1.6.0",
     "tdetector": "git://github.com/jmarca/tdetector.git"
   }
 }
